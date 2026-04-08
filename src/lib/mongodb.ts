@@ -1,6 +1,6 @@
 import { MongoClient } from "mongodb";
 
-let cachedClientPromise: Promise<MongoClient> | null = null;
+let cachedClientPromise: Promise<MongoClient | null> | null = null;
 
 export async function getMongoClient(): Promise<MongoClient | null> {
   const uri = process.env.MONGODB_URI;
@@ -8,7 +8,10 @@ export async function getMongoClient(): Promise<MongoClient | null> {
 
   if (!cachedClientPromise) {
     const client = new MongoClient(uri);
-    cachedClientPromise = client.connect();
+    cachedClientPromise = client.connect().catch(() => {
+      cachedClientPromise = null;
+      return null;
+    });
   }
 
   return cachedClientPromise;
