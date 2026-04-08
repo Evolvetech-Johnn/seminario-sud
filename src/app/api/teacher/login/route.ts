@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 
-import { getMongoDb } from "@/lib/mongodb";
+import { getMongoDb, getMongoDiagnostics } from "@/lib/mongodb";
 
 type Body = {
   username?: unknown;
@@ -23,6 +23,26 @@ function hashPassword(password: string, salt: string) {
   return buf.toString("base64");
 }
 
+function mapMongoErrorToMessage(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+
+  const m = message.toLowerCase();
+  if (m.includes("authentication failed") || m.includes("auth failed")) {
+    return "Falha de autenticação no MongoDB (usuário/senha do Atlas)";
+  }
+  if (m.includes("not authorized") || m.includes("unauthorized")) {
+    return "MongoDB sem permissão para salvar (verifique permissões do usuário no Atlas)";
+  }
+  if (m.includes("ip") && m.includes("not allowed")) {
+    return "IP não autorizado no MongoDB Atlas (Network Access)";
+  }
+  if (m.includes("server selection timed out")) {
+    return "Timeout ao conectar no MongoDB (rede/Atlas indisponível)";
+  }
+
+  return message || "Falha ao conectar no MongoDB";
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json().catch(() => null)) as Body | null;
@@ -32,6 +52,14 @@ export async function POST(req: Request) {
 
     if (username !== "johnathan") {
       return NextResponse.json({ ok: false, error: "Usuário inválido" }, { status: 401 });
+    }
+
+    const diag = await getMongoDiagnostics();
+    if (!diag.configured || !diag.connected) {
+      return NextResponse.json(
+        { ok: false, error: diag.error ?? "MongoDB não configurado no ambiente" },
+        { status: 500 },
+      );
     }
 
     const db = await getMongoDb();
@@ -63,7 +91,13 @@ export async function POST(req: Request) {
           { status: 400 },
         );
       }
-      if (confirmPassword && confirmPassword !== password) {
+      if (!confirmPassword) {
+        return NextResponse.json(
+          { ok: false, error: "Confirme sua senha" },
+          { status: 400 },
+        );
+      }
+      if (confirmPassword !== password) {
         return NextResponse.json(
           { ok: false, error: "As senhas não conferem" },
           { status: 400 },
@@ -105,9 +139,9 @@ export async function POST(req: Request) {
       maxAge: 60 * 60 * 8,
     });
     return res;
-  } catch {
+  } catch (err) {
     return NextResponse.json(
-      { ok: false, error: "Falha ao autenticar (MongoDB indisponível)" },
+      { ok: false, error: mapMongoErrorToMessage(err) },
       { status: 500 },
     );
   }

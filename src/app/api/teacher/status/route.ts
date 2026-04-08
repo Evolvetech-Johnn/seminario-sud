@@ -1,9 +1,20 @@
 import { NextResponse } from "next/server";
 
-import { getMongoDb } from "@/lib/mongodb";
+import { getMongoClient, getMongoDb, getMongoDiagnostics } from "@/lib/mongodb";
 
 export async function GET() {
   try {
+    const diag = await getMongoDiagnostics();
+    if (!diag.configured || !diag.connected) {
+      return NextResponse.json({
+        ok: true,
+        username: "johnathan",
+        initialized: false,
+        ready: false,
+        error: diag.error ?? "MongoDB não configurado no ambiente",
+      });
+    }
+
     const db = await getMongoDb();
     if (!db) {
       return NextResponse.json({
@@ -13,6 +24,11 @@ export async function GET() {
         ready: false,
         error: "MongoDB não configurado no ambiente",
       });
+    }
+
+    const client = await getMongoClient();
+    if (client) {
+      await db.command({ ping: 1 });
     }
 
     const existing = await db
@@ -25,13 +41,13 @@ export async function GET() {
       initialized: Boolean(existing),
       ready: true,
     });
-  } catch {
+  } catch (err) {
     return NextResponse.json({
       ok: true,
       username: "johnathan",
       initialized: false,
       ready: false,
-      error: "Falha ao conectar no MongoDB",
+      error: err instanceof Error ? err.message : "Falha ao conectar no MongoDB",
     });
   }
 }

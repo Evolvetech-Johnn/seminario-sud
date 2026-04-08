@@ -48,6 +48,14 @@ export function TeacherLoginClient() {
     };
   }, []);
 
+  const canSubmit = useMemo(() => {
+    if (initialized === null) return false;
+    if (isSubmitting) return false;
+    if (!password) return false;
+    if (initialized === false && !confirmPassword) return false;
+    return true;
+  }, [confirmPassword, initialized, isSubmitting, password]);
+
   const onSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -126,7 +134,7 @@ export function TeacherLoginClient() {
           <button
             type="button"
             onClick={onSubmit}
-            disabled={initialized === null || !ready || isSubmitting}
+            disabled={!canSubmit}
             className="inline-flex items-center justify-center rounded-2xl bg-sud-blue px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25"
           >
             {isSubmitting ? "Salvando..." : initialized === false ? "Criar" : "Entrar"}
