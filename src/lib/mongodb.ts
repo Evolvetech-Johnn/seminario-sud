@@ -7,7 +7,10 @@ export async function getMongoClient(): Promise<MongoClient | null> {
   if (!uri) return null;
 
   if (!cachedClientPromise) {
-    const client = new MongoClient(uri);
+    const client = new MongoClient(uri, {
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+    });
     cachedClientPromise = client.connect().catch(() => {
       cachedClientPromise = null;
       return null;
