@@ -27,6 +27,9 @@ function mapMongoErrorToMessage(err: unknown) {
   const message = err instanceof Error ? err.message : String(err);
 
   const m = message.toLowerCase();
+  if (m.includes("ssl routines") || m.includes("tlsv1 alert")) {
+    return "Erro TLS/SSL ao conectar no MongoDB. Verifique se o MONGODB_URI do Atlas está correto e se a senha no URI está URL-encoded (caracteres especiais como @ : / ? # precisam ser codificados).";
+  }
   if (m.includes("authentication failed") || m.includes("auth failed")) {
     return "Falha de autenticação no MongoDB (usuário/senha do Atlas)";
   }

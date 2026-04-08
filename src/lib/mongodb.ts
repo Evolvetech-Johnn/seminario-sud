@@ -13,16 +13,35 @@ function asErrorMessage(err: unknown) {
   }
 }
 
+function validateMongoUri(uri: string) {
+  if (!uri.trim()) return { ok: false as const, error: "MONGODB_URI vazio" };
+  if (uri.includes(" ")) return { ok: false as const, error: "MONGODB_URI contém espaços" };
+  if (!uri.startsWith("mongodb://") && !uri.startsWith("mongodb+srv://")) {
+    return {
+      ok: false as const,
+      error: "MONGODB_URI inválido (use mongodb:// ou mongodb+srv://)",
+    };
+  }
+  return { ok: true as const, error: null as string | null };
+}
+
 export async function getMongoClient(): Promise<MongoClient | null> {
   const uri = process.env.MONGODB_URI;
   if (!uri) return null;
 
   if (cachedUri && cachedUri !== uri) {
     cachedClientPromise = null;
+    cachedLastError = null;
   }
   cachedUri = uri;
 
   if (!cachedClientPromise) {
+    const validation = validateMongoUri(uri);
+    if (!validation.ok) {
+      cachedLastError = validation.error;
+      return null;
+    }
+
     const client = new MongoClient(uri, {
       serverSelectionTimeoutMS: 5000,
       connectTimeoutMS: 5000,
