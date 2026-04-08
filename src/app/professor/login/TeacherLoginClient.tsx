@@ -19,6 +19,7 @@ export function TeacherLoginClient() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,22 +49,30 @@ export function TeacherLoginClient() {
   }, []);
 
   const onSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setError(null);
-    const res = await fetch("/api/teacher/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        initialized
-          ? { username, password }
-          : { username, password, confirmPassword },
-      ),
-    });
-    if (!res.ok) {
-      const j = await res.json().catch(() => null);
-      setError(j?.error ?? "Erro ao autenticar");
-      return;
+    try {
+      const res = await fetch("/api/teacher/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          initialized
+            ? { username, password }
+            : { username, password, confirmPassword },
+        ),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        setError(j?.error ?? "Erro ao autenticar");
+        return;
+      }
+      router.replace(nextUrl);
+    } catch {
+      setError("Falha de rede ao tentar salvar. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
-    router.replace(nextUrl);
   };
 
   return (
@@ -117,10 +126,10 @@ export function TeacherLoginClient() {
           <button
             type="button"
             onClick={onSubmit}
-            disabled={initialized === null || !ready}
+            disabled={initialized === null || !ready || isSubmitting}
             className="inline-flex items-center justify-center rounded-2xl bg-sud-blue px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25"
           >
-            {initialized === false ? "Criar" : "Entrar"}
+            {isSubmitting ? "Salvando..." : initialized === false ? "Criar" : "Entrar"}
           </button>
         </div>
       </div>
