@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { AppHeader } from "@/components/seminario/AppHeader";
 import { getMongoDb } from "@/lib/mongodb";
 
@@ -37,11 +38,19 @@ export default async function TeacherResponsesPage() {
               Total: {docs?.length ?? 0}
             </p>
           </div>
-          <form action="/api/teacher/logout" method="post">
-            <button className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-sud-gray">
-              Sair
-            </button>
-          </form>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/professor/aulas/exodo-12-13"
+              className="rounded-2xl bg-sud-blue px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25"
+            >
+              Gabarito da aula
+            </Link>
+            <form action="/api/teacher/logout" method="post">
+              <button className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-sud-gray">
+                Sair
+              </button>
+            </form>
+          </div>
         </div>
 
         <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
