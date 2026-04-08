@@ -1,19 +1,16 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
-import { AppHeader } from "@/components/seminario/AppHeader";
-import { TeacherLoginClient } from "./TeacherLoginClient";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Seminário SUD — Acesso do professor",
 };
 
-export default function TeacherLoginPage() {
-  return (
-    <div className="min-h-dvh bg-white">
-      <AppHeader />
-      <Suspense>
-        <TeacherLoginClient />
-      </Suspense>
-    </div>
-  );
+type Props = {
+  searchParams?: Record<string, string | string[] | undefined>;
+};
+
+export default function TeacherLoginPage({ searchParams }: Props) {
+  const rawNext = searchParams?.next;
+  const nextUrl = typeof rawNext === "string" ? rawNext : "/professor/respostas";
+  redirect(`/professor/autologin?next=${encodeURIComponent(nextUrl)}`);
 }
