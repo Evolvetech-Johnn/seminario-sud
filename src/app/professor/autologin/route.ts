@@ -12,6 +12,12 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const nextUrl = safeNextUrl(url.searchParams.get("next"));
 
+  if (process.env.TEACHER_AUTOLOGIN !== "1") {
+    return NextResponse.redirect(
+      new URL(`/professor/login?next=${encodeURIComponent(nextUrl)}`, url.origin),
+    );
+  }
+
   const res = NextResponse.redirect(new URL(nextUrl, url.origin));
   res.cookies.set({
     name: "teacherAuth",
@@ -24,4 +30,3 @@ export async function GET(req: Request) {
   });
   return res;
 }
-

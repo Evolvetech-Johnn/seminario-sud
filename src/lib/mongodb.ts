@@ -1,10 +1,16 @@
 import { MongoClient } from "mongodb";
 
 let cachedClientPromise: Promise<MongoClient | null> | null = null;
+let cachedUri: string | null = null;
 
 export async function getMongoClient(): Promise<MongoClient | null> {
   const uri = process.env.MONGODB_URI;
   if (!uri) return null;
+
+  if (cachedUri && cachedUri !== uri) {
+    cachedClientPromise = null;
+  }
+  cachedUri = uri;
 
   if (!cachedClientPromise) {
     const client = new MongoClient(uri, {
