@@ -51,5 +51,21 @@ export type LessonConfig = {
     }>;
     cta: string;
   };
+  referenceMaterial?: {
+    title: string;
+    sourceUrl: string;
+    sections: Array<{
+      title: string;
+      bullets: string[];
+    }>;
+    scriptureStudy?: {
+      title: string;
+      passages: string[];
+      prompts: string[];
+    };
+    sacramentStudy?: {
+      passages: string[];
+      prompts: string[];
+    };
+  };
 };
-

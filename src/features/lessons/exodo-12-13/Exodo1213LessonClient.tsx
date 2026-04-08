@@ -315,6 +315,17 @@ export function Exodo1213LessonClient() {
                     Lucas 22:19
                   </div>
                 </div>
+
+                {exodo1213Lesson.referenceMaterial ? (
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <Link
+                      href="#consulta"
+                      className="inline-flex items-center justify-center rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-white/90 ring-1 ring-white/15 backdrop-blur transition hover:bg-white/15"
+                    >
+                      Consulta
+                    </Link>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
@@ -571,6 +582,127 @@ export function Exodo1213LessonClient() {
               </div>
             </Section>
           </div>
+
+          {exodo1213Lesson.referenceMaterial ? (
+            <div className="mt-10 sm:mt-14">
+              <Section
+                id="consulta"
+                title="Material de consulta"
+                subtitle="Resumo do manual do professor (2026) para apoiar o estudo — sem atrapalhar a dinâmica da aula."
+              >
+                <details className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                  <summary className="cursor-pointer list-none select-none">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="text-base font-bold text-slate-900">
+                          Abrir resumo e roteiro sugerido
+                        </div>
+                        <div className="mt-1 text-sm text-slate-600">
+                          {exodo1213Lesson.referenceMaterial.title}
+                        </div>
+                      </div>
+                      <div className="rounded-full bg-sud-gray px-3 py-2 text-xs font-semibold text-slate-700 transition group-open:bg-white group-open:ring-1 group-open:ring-slate-200">
+                        Alternar
+                      </div>
+                    </div>
+                  </summary>
+
+                  <div className="mt-6 grid gap-5 lg:grid-cols-2">
+                    <div className="rounded-3xl border border-slate-200 bg-sud-gray p-5 sm:p-6">
+                      <div className="text-sm font-semibold text-slate-700">
+                        Resumo (em tópicos)
+                      </div>
+                      <div className="mt-4 space-y-4">
+                        {exodo1213Lesson.referenceMaterial.sections.map((section) => (
+                          <div key={section.title}>
+                            <div className="text-sm font-bold text-slate-900">
+                              {section.title}
+                            </div>
+                            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                              {section.bullets.map((b) => (
+                                <li key={b}>{b}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                      <div className="text-sm font-semibold text-slate-700">
+                        Roteiros de estudo sugeridos
+                      </div>
+
+                      {exodo1213Lesson.referenceMaterial.scriptureStudy ? (
+                        <div className="mt-4">
+                          <div className="text-sm font-bold text-slate-900">
+                            {exodo1213Lesson.referenceMaterial.scriptureStudy.title}
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {exodo1213Lesson.referenceMaterial.scriptureStudy.passages.map(
+                              (p) => (
+                                <span
+                                  key={p}
+                                  className="rounded-full bg-sud-gray px-3 py-1 text-xs font-semibold text-slate-700"
+                                >
+                                  {p}
+                                </span>
+                              ),
+                            )}
+                          </div>
+                          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                            {exodo1213Lesson.referenceMaterial.scriptureStudy.prompts.map(
+                              (q) => (
+                                <li key={q}>{q}</li>
+                              ),
+                            )}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      {exodo1213Lesson.referenceMaterial.sacramentStudy ? (
+                        <div className="mt-6">
+                          <div className="text-sm font-bold text-slate-900">
+                            Páscoa e sacramento
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {exodo1213Lesson.referenceMaterial.sacramentStudy.passages.map(
+                              (p) => (
+                                <span
+                                  key={p}
+                                  className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200"
+                                >
+                                  {p}
+                                </span>
+                              ),
+                            )}
+                          </div>
+                          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                            {exodo1213Lesson.referenceMaterial.sacramentStudy.prompts.map(
+                              (q) => (
+                                <li key={q}>{q}</li>
+                              ),
+                            )}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      <div className="mt-6">
+                        <a
+                          href={exodo1213Lesson.referenceMaterial.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center rounded-2xl bg-sud-blue px-4 py-2 text-sm font-bold text-white transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25"
+                        >
+                          Abrir fonte oficial
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              </Section>
+            </div>
+          ) : null}
         </div>
       </main>
 
