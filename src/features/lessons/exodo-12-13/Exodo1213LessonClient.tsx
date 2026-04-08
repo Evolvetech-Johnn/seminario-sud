@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AppHeader } from "@/components/seminario/AppHeader";
 import { Card } from "@/components/seminario/Card";
@@ -16,6 +17,7 @@ import {
   IconWater,
 } from "@/components/seminario/icons";
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
+import { useStudentSession } from "@/hooks/useStudentSession";
 import { cn } from "@/lib/cn";
 
 import { exodo1213Lesson } from "./config";
@@ -26,8 +28,8 @@ type CommitmentPlan = {
   after: string;
 };
 
-function lessonKey(suffix: string) {
-  return `seminario:${exodo1213Lesson.slug}:${suffix}`;
+function lessonKey(studentId: string, suffix: string) {
+  return `seminario:${studentId}:${exodo1213Lesson.slug}:${suffix}`;
 }
 
 function IconByKey({ icon }: { icon: string }) {
@@ -50,12 +52,32 @@ function IconByKey({ icon }: { icon: string }) {
 }
 
 export function Exodo1213LessonClient() {
-  const icebreaker = useLocalStorageState(lessonKey("icebreaker"), "", {});
-  const discussionNotes = useLocalStorageState(lessonKey("discussionNotes"), "", {});
-  const actionBefore = useLocalStorageState(lessonKey("action:before"), "", {});
-  const actionDuring = useLocalStorageState(lessonKey("action:during"), "", {});
-  const actionAfter = useLocalStorageState(lessonKey("action:after"), "", {});
+  const { session, isHydrated: isSessionHydrated, logout } = useStudentSession();
+  const studentId = session?.id ?? "anon";
 
+  const icebreaker = useLocalStorageState(lessonKey(studentId, "icebreaker"), "", {});
+  const discussionNotes = useLocalStorageState(
+    lessonKey(studentId, "discussionNotes"),
+    "",
+    {},
+  );
+  const actionBefore = useLocalStorageState(lessonKey(studentId, "action:before"), "", {});
+  const actionDuring = useLocalStorageState(lessonKey(studentId, "action:during"), "", {});
+  const actionAfter = useLocalStorageState(lessonKey(studentId, "action:after"), "", {});
+
+  const icebreakerValue = icebreaker.state;
+  const discussionNotesValue = discussionNotes.state;
+  const actionBeforeValue = actionBefore.state;
+  const actionDuringValue = actionDuring.state;
+  const actionAfterValue = actionAfter.state;
+
+  const setIcebreakerValue = icebreaker.setState;
+  const setDiscussionNotesValue = discussionNotes.setState;
+  const setActionBeforeValue = actionBefore.setState;
+  const setActionDuringValue = actionDuring.setState;
+  const setActionAfterValue = actionAfter.setState;
+
+  const [hasLoadedFromServer, setHasLoadedFromServer] = useState(false);
   const [reflectionShown, setReflectionShown] = useState(false);
   const [saveState, setSaveState] = useState<
     | { status: "idle" }
@@ -66,11 +88,11 @@ export function Exodo1213LessonClient() {
 
   const commitmentPlan: CommitmentPlan = useMemo(
     () => ({
-      before: actionBefore.state,
-      during: actionDuring.state,
-      after: actionAfter.state,
+      before: actionBeforeValue,
+      during: actionDuringValue,
+      after: actionAfterValue,
     }),
-    [actionAfter.state, actionBefore.state, actionDuring.state],
+    [actionAfterValue, actionBeforeValue, actionDuringValue],
   );
 
   const onReflect = useCallback(() => {
@@ -86,6 +108,8 @@ export function Exodo1213LessonClient() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           lessonSlug: exodo1213Lesson.slug,
+          studentId: session?.id ?? null,
+          studentName: session?.name ?? null,
           plan: commitmentPlan,
         }),
       });
@@ -103,11 +127,156 @@ export function Exodo1213LessonClient() {
       setSaveState({ status: "error" });
       window.setTimeout(() => setSaveState({ status: "idle" }), 3500);
     }
-  }, [commitmentPlan]);
+  }, [commitmentPlan, session]);
+
+  const canSync =
+    isSessionHydrated &&
+    Boolean(session) &&
+    icebreaker.isHydrated &&
+    discussionNotes.isHydrated &&
+    actionBefore.isHydrated &&
+    actionDuring.isHydrated &&
+    actionAfter.isHydrated;
+
+  const studentIdForSync = session?.id ?? null;
+  const studentNameForSync = session?.name ?? null;
+
+  const answersPayload = useMemo(
+    () => ({
+      icebreaker: icebreakerValue,
+      discussionNotes: discussionNotesValue,
+      actionBefore: actionBeforeValue,
+      actionDuring: actionDuringValue,
+      actionAfter: actionAfterValue,
+    }),
+    [
+      actionAfterValue,
+      actionBeforeValue,
+      actionDuringValue,
+      discussionNotesValue,
+      icebreakerValue,
+    ],
+  );
+
+  useEffect(() => {
+    if (!canSync) return;
+    if (hasLoadedFromServer) return;
+
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/lesson-responses?lessonSlug=${encodeURIComponent(exodo1213Lesson.slug)}&studentId=${encodeURIComponent(studentIdForSync ?? "")}`,
+          { signal: controller.signal },
+        );
+        const json = (await res.json().catch(() => null)) as
+          | { ok?: boolean; data?: { answers?: Partial<typeof answersPayload> } | null }
+          | null;
+
+        const serverAnswers = json?.data?.answers;
+        if (serverAnswers) {
+          if (!icebreakerValue && typeof serverAnswers.icebreaker === "string") {
+            setIcebreakerValue(serverAnswers.icebreaker);
+          }
+          if (
+            !discussionNotesValue &&
+            typeof serverAnswers.discussionNotes === "string"
+          ) {
+            setDiscussionNotesValue(serverAnswers.discussionNotes);
+          }
+          if (!actionBeforeValue && typeof serverAnswers.actionBefore === "string") {
+            setActionBeforeValue(serverAnswers.actionBefore);
+          }
+          if (!actionDuringValue && typeof serverAnswers.actionDuring === "string") {
+            setActionDuringValue(serverAnswers.actionDuring);
+          }
+          if (!actionAfterValue && typeof serverAnswers.actionAfter === "string") {
+            setActionAfterValue(serverAnswers.actionAfter);
+          }
+        }
+      } catch {
+        return;
+      } finally {
+        setHasLoadedFromServer(true);
+      }
+    })();
+
+    return () => controller.abort();
+  }, [
+    actionAfterValue,
+    actionBeforeValue,
+    actionDuringValue,
+    canSync,
+    discussionNotesValue,
+    hasLoadedFromServer,
+    icebreakerValue,
+    setActionAfterValue,
+    setActionBeforeValue,
+    setActionDuringValue,
+    setDiscussionNotesValue,
+    setIcebreakerValue,
+    studentIdForSync,
+  ]);
+
+  useEffect(() => {
+    if (!canSync) return;
+
+    const timeout = window.setTimeout(() => {
+      fetch("/api/lesson-responses", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          lessonSlug: exodo1213Lesson.slug,
+          studentId: studentIdForSync,
+          studentName: studentNameForSync,
+          answers: answersPayload,
+        }),
+      }).catch(() => null);
+    }, 800);
+
+    return () => window.clearTimeout(timeout);
+  }, [answersPayload, canSync, studentIdForSync, studentNameForSync]);
+
+  if (isSessionHydrated && !session) {
+    return (
+      <div className="min-h-dvh bg-white">
+        <AppHeader activeHref="/aulas/exodo-12-13" />
+        <main className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
+          <div className="rounded-3xl border border-slate-200 bg-sud-gray p-6 shadow-sm sm:p-10">
+            <div className="text-sm font-semibold text-slate-700">
+              Identificação do aluno
+            </div>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              Entre para registrar suas respostas
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
+              Cada aluno salva suas respostas separadamente neste dispositivo.
+            </p>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <Link
+                href={`/login?next=${encodeURIComponent("/aulas/exodo-12-13")}`}
+                className="inline-flex items-center justify-center rounded-2xl bg-sud-blue px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25"
+              >
+                Ir para login
+              </Link>
+              <div className="text-sm text-slate-600">
+                Dica: use seu nome completo para evitar confusão.
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-dvh bg-white">
-      <AppHeader activeHref="/aulas/exodo-12-13" />
+      <AppHeader
+        activeHref="/aulas/exodo-12-13"
+        studentName={session?.name ?? null}
+        onLogout={logout}
+      />
 
       <main>
         <section className="relative">

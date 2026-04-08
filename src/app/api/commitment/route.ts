@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 
+import { getMongoDb } from "@/lib/mongodb";
+
 type CommitmentPayload = {
   lessonSlug?: unknown;
+  studentId?: unknown;
+  studentName?: unknown;
   plan?: {
     before?: unknown;
     during?: unknown;
@@ -32,11 +36,39 @@ export async function POST(req: Request) {
     after: asLimitedString(body?.plan?.after, 2000),
   };
 
+  const studentId = asLimitedString(body?.studentId, 80) || null;
+  const studentName = asLimitedString(body?.studentName, 80) || null;
+
+  const db = await getMongoDb();
+  if (db && studentId) {
+    const now = new Date();
+    await db.collection("commitments").updateOne(
+      { lessonSlug, studentId },
+      {
+        $set: { lessonSlug, studentId, studentName, plan, updatedAt: now },
+        $setOnInsert: { createdAt: now },
+      },
+      { upsert: true },
+    );
+
+    return NextResponse.json({
+      ok: true,
+      lessonSlug,
+      studentId,
+      studentName,
+      plan,
+      savedAt: now.toISOString(),
+      storage: "mongo",
+    });
+  }
+
   return NextResponse.json({
     ok: true,
     lessonSlug,
+    studentId,
+    studentName,
     plan,
     savedAt: new Date().toISOString(),
+    storage: db ? "mongo" : "local",
   });
 }
-

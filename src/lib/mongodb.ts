@@ -1,0 +1,22 @@
+import { MongoClient } from "mongodb";
+
+let cachedClientPromise: Promise<MongoClient> | null = null;
+
+export async function getMongoClient(): Promise<MongoClient | null> {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) return null;
+
+  if (!cachedClientPromise) {
+    const client = new MongoClient(uri);
+    cachedClientPromise = client.connect();
+  }
+
+  return cachedClientPromise;
+}
+
+export async function getMongoDb() {
+  const client = await getMongoClient();
+  if (!client) return null;
+  const dbName = process.env.MONGODB_DB || "seminario-sud";
+  return client.db(dbName);
+}
