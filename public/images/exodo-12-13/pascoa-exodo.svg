@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" fill="none" role="img" aria-label="Ilustração: Páscoa em Êxodo (cordeiro, umbral e sinal)">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="800" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F3F4F6"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+    <linearGradient id="door" x1="150" y1="160" x2="480" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E3A8A" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#0B1F4B" stop-opacity="0.95"/>
+    </linearGradient>
+    <linearGradient id="lamb" x1="640" y1="290" x2="1030" y2="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E8EDF7"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="800" fill="url(#bg)"/>
+
+  <g opacity="0.18">
+    <circle cx="210" cy="170" r="140" fill="#2563EB"/>
+    <circle cx="1060" cy="210" r="190" fill="#1E3A8A"/>
+  </g>
+
+  <g>
+    <path d="M210 180H470V640H210V180Z" fill="url(#door)" />
+    <path d="M190 160H490V660H190V160Z" stroke="#FFFFFF" stroke-opacity="0.25" stroke-width="10"/>
+    <path d="M190 160H490" stroke="#059669" stroke-opacity="0.55" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <g>
+    <path d="M230 210C255 245 280 245 305 210C330 245 355 245 380 210C405 245 430 245 455 210" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <g>
+    <path d="M690 410c0-62 50-112 112-112h72c62 0 112 50 112 112v52c0 82-66 148-148 148h-36c-62 0-112-50-112-112v-88Z" fill="url(#lamb)" stroke="#1E3A8A" stroke-opacity="0.18" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M770 320c-16-46 18-94 66-102 36-6 70 12 84 42" stroke="#1E3A8A" stroke-opacity="0.55" stroke-width="10" stroke-linecap="round"/>
+    <path d="M980 365c50-8 86-54 78-104s-58-84-108-76" stroke="#1E3A8A" stroke-opacity="0.45" stroke-width="10" stroke-linecap="round"/>
+    <path d="M782 560h170" stroke="#059669" stroke-opacity="0.65" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <g opacity="0.9">
+    <path d="M188 214C212 248 245 262 290 262C335 262 368 248 392 214" stroke="#DC2626" stroke-opacity="0.7" stroke-width="10" stroke-linecap="round"/>
+    <path d="M488 214C464 248 431 262 386 262C341 262 308 248 284 214" stroke="#DC2626" stroke-opacity="0.7" stroke-width="10" stroke-linecap="round"/>
+    <path d="M190 160V260" stroke="#DC2626" stroke-opacity="0.55" stroke-width="10" stroke-linecap="round"/>
+    <path d="M490 160V260" stroke="#DC2626" stroke-opacity="0.55" stroke-width="10" stroke-linecap="round"/>
+  </g>
+</svg>
+
