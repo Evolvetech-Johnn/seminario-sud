@@ -5,6 +5,10 @@ export type LessonCard = {
   title: string;
   description: string;
   icon: "lamb" | "shield" | "repeat" | "bread" | "water" | "covenant";
+  image?: {
+    src: string;
+    alt: string;
+  };
 };
 
 export type LessonConfig = {

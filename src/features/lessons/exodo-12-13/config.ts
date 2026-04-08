@@ -9,8 +9,8 @@ export const exodo1213Lesson: LessonConfig = {
     subtext:
       "A memória espiritual não é nostalgia: é um convênio renovado com propósito, repetição e reverência.",
     image: {
-      src: "/images/exodo-12-13/hero-ultima-ceia.svg",
-      alt: "A Última Ceia (ilustração conceitual)",
+      src: "/images/exodo-12-13/ultima%20ceia.png",
+      alt: "A Última Ceia",
     },
   },
   icebreaker: {
@@ -24,8 +24,8 @@ export const exodo1213Lesson: LessonConfig = {
     subtitle:
       "A Páscoa ensinou Israel a lembrar por meio de sinais e repetição. Em Cristo, o símbolo encontra seu cumprimento.",
     image: {
-      src: "/images/exodo-12-13/pascoa-exodo.svg",
-      alt: "Páscoa em Êxodo (ilustração conceitual)",
+      src: "/images/exodo-12-13/pacoa%20de%20exodo.png",
+      alt: "Páscoa em Êxodo",
     },
     cards: [
       {
@@ -41,6 +41,10 @@ export const exodo1213Lesson: LessonConfig = {
         description:
           "O sinal no umbral ensinou que a salvação vem por meio do convênio e da obediência ao que Deus revela.",
         icon: "shield",
+        image: {
+          src: "/images/exodo-12-13/marca%20de%20sangue%20nas%20portas.png",
+          alt: "Marca de sangue nas portas",
+        },
       },
       {
         key: "memory",
@@ -56,8 +60,8 @@ export const exodo1213Lesson: LessonConfig = {
     subtitle:
       "O sacramento renova convênios e treina nossa mente a lembrar de Cristo de forma intencional, toda semana.",
     image: {
-      src: "/images/exodo-12-13/sacramento.svg",
-      alt: "Sacramento (ilustração conceitual)",
+      src: "/images/exodo-12-13/sacramento.png",
+      alt: "Sacramento",
     },
     cards: [
       {
@@ -80,6 +84,10 @@ export const exodo1213Lesson: LessonConfig = {
         description:
           "O convênio não é automático. Ele se fortalece quando escolhemos lembrar de Cristo em pensamentos e ações.",
         icon: "covenant",
+        image: {
+          src: "/images/exodo-12-13/memoria%20sagrada.png",
+          alt: "Recordá-lo sempre",
+        },
       },
     ],
   },

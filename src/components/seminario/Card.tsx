@@ -37,6 +37,7 @@ export function Card({
             src={imageSrc}
             alt={imageAlt ?? ""}
             fill
+            unoptimized
             className="object-cover transition duration-500 group-hover:scale-[1.03]"
             sizes="(max-width: 768px) 100vw, 33vw"
           />
@@ -69,4 +70,3 @@ export function Card({
     </div>
   );
 }
-

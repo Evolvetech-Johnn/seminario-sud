@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { AppHeader } from "@/components/seminario/AppHeader";
@@ -23,10 +23,11 @@ export function LoginClient() {
   const [code, setCode] = useState("");
   const [status, setStatus] = useState<"idle" | "error">("idle");
 
-  if (isHydrated && session) {
-    router.replace(nextUrl);
-    return null;
-  }
+  useEffect(() => {
+    if (isHydrated && session) {
+      router.replace(nextUrl);
+    }
+  }, [isHydrated, session, nextUrl, router]);
 
   return (
     <div className="min-h-dvh bg-white">

@@ -405,6 +405,8 @@ export function Exodo1213LessonClient() {
                       title={card.title}
                       description={card.description}
                       icon={<IconByKey icon={card.icon} />}
+                      imageSrc={card.image?.src}
+                      imageAlt={card.image?.alt}
                     />
                   ))}
                 </div>
@@ -427,6 +429,8 @@ export function Exodo1213LessonClient() {
                       title={card.title}
                       description={card.description}
                       icon={<IconByKey icon={card.icon} />}
+                      imageSrc={card.image?.src}
+                      imageAlt={card.image?.alt}
                       tone="spiritual"
                     />
                   ))}
