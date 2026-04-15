@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { AppHeader } from "@/components/seminario/AppHeader";
 import { getMongoDb } from "@/lib/mongodb";
 import { exodo1213Lesson } from "@/features/lessons/exodo-12-13/config";
+import { exodo16Lesson } from "@/features/lessons/exodo-16/config";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,12 @@ export default async function TeacherLessonAnswerKeyPage({ params }: Props) {
 
   const { slug } = await params;
 
-  const lesson = slug === exodo1213Lesson.slug ? exodo1213Lesson : null;
+  const lesson =
+    slug === exodo16Lesson.slug
+      ? exodo16Lesson
+      : slug === exodo1213Lesson.slug
+        ? exodo1213Lesson
+        : null;
   if (!lesson) notFound();
 
   const db = await getMongoDb();

@@ -40,7 +40,7 @@ export default async function TeacherResponsesPage() {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              href="/professor/aulas/exodo-12-13"
+              href="/professor/aulas/exodo-16"
               className="rounded-2xl bg-sud-blue px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25"
             >
               Gabarito da aula

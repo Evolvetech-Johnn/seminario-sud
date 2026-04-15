@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function HomePage() {
-  redirect("/aulas/exodo-12-13");
+  redirect("/aulas/exodo-16");
 }
-

@@ -12,8 +12,8 @@ type AppHeaderProps = {
 };
 
 const navItems = [
-  { href: "/aulas/exodo-12-13", label: "Aula atual" },
-  { href: "#", label: "Aulas anteriores" },
+  { href: "/aulas/exodo-16", label: "Aula atual" },
+  { href: "/aulas/exodo-12-13", label: "Aulas anteriores" },
 ] as const;
 
 export function AppHeader({
