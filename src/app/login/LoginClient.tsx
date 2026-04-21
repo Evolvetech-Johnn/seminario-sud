@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 import { AppHeader } from "@/components/seminario/AppHeader";
 import { cn } from "@/lib/cn";
@@ -91,6 +92,22 @@ export function LoginClient() {
                 className="inline-flex items-center justify-center rounded-2xl bg-sud-blue px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25"
               >
                 Entrar
+              </button>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-4">
+              <div className="text-sm font-semibold text-slate-900">
+                Login com conta (Google)
+              </div>
+              <div className="mt-1 text-sm text-slate-600">
+                Use para acessar áreas protegidas por sessão (ex: dashboard).
+              </div>
+              <button
+                type="button"
+                onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                className="mt-4 inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-sm transition hover:bg-sud-gray focus:outline-none focus:ring-4 focus:ring-slate-200/60"
+              >
+                Entrar com Google
               </button>
             </div>
           </div>
