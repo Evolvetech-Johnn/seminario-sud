@@ -6,6 +6,8 @@ import { AppHeader } from "@/components/seminario/AppHeader";
 import { getMongoDb } from "@/lib/mongodb";
 import { exodo1213Lesson } from "@/features/lessons/exodo-12-13/config";
 import { exodo16Lesson } from "@/features/lessons/exodo-16/config";
+import { exodo2011Lesson } from "@/features/lessons/exodo-20-1-11/config";
+import { fazerComparacoesLesson } from "@/features/lessons/fazer-comparacoes/config";
 
 export const dynamic = "force-dynamic";
 
@@ -21,8 +23,13 @@ export default async function TeacherLessonAnswerKeyPage({ params }: Props) {
 
   const { slug } = await params;
 
+  const lessons = [fazerComparacoesLesson, exodo2011Lesson, exodo16Lesson, exodo1213Lesson];
   const lesson =
-    slug === exodo16Lesson.slug
+    slug === fazerComparacoesLesson.slug
+      ? fazerComparacoesLesson
+      : slug === exodo2011Lesson.slug
+      ? exodo2011Lesson
+      : slug === exodo16Lesson.slug
       ? exodo16Lesson
       : slug === exodo1213Lesson.slug
         ? exodo1213Lesson
@@ -63,6 +70,33 @@ export default async function TeacherLessonAnswerKeyPage({ params }: Props) {
                 Sair
               </button>
             </form>
+          </div>
+        </div>
+
+        <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-sud-gray px-5 py-4 sm:px-7">
+            <div className="text-sm font-semibold text-slate-800">Selecionar aula</div>
+            <div className="mt-1 text-sm text-slate-600">
+              Troque rapidamente entre os gabaritos disponíveis.
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 px-5 py-4 sm:px-7">
+            {lessons.map((l) => {
+              const active = l.slug === slug;
+              return (
+                <Link
+                  key={l.slug}
+                  href={`/professor/aulas/${l.slug}`}
+                  className={
+                    active
+                      ? "rounded-full bg-sud-blue px-4 py-2 text-sm font-bold text-white shadow-sm"
+                      : "rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-sud-gray"
+                  }
+                >
+                  {l.title}
+                </Link>
+              );
+            })}
           </div>
         </div>
 

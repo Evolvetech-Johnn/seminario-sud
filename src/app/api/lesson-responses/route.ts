@@ -20,21 +20,110 @@ function asLimitedString(value: unknown, maxLen: number): string {
   return value.slice(0, maxLen);
 }
 
+function normalizeText(value: unknown) {
+  if (typeof value !== "string") return "";
+  return value.trim();
+}
+
+function scoreAnswers(answers: LessonResponsesPayload["answers"]) {
+  const fields = [
+    { key: "icebreaker", base: 10, bonusCap: 10 },
+    { key: "discussionNotes", base: 10, bonusCap: 20 },
+    { key: "actionBefore", base: 10, bonusCap: 10 },
+    { key: "actionDuring", base: 10, bonusCap: 10 },
+    { key: "actionAfter", base: 10, bonusCap: 10 },
+  ] as const;
+
+  let points = 0;
+  let filled = 0;
+
+  for (const f of fields) {
+    const raw = (answers as any)?.[f.key];
+    const text = normalizeText(raw);
+    if (!text) continue;
+    filled += 1;
+    points += f.base;
+    const bonus = Math.min(f.bonusCap, Math.floor(text.length / 120) * 2);
+    points += bonus;
+  }
+
+  const completionBonus = filled === fields.length ? 25 : 0;
+  const multiplier =
+    filled === fields.length ? 1.2 : filled === fields.length - 1 ? 1.1 : filled >= 3 ? 1.05 : 1;
+  const total = Math.round((points + completionBonus) * multiplier);
+
+  return { points: total, filled };
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const lessonSlug = url.searchParams.get("lessonSlug");
   const studentId = url.searchParams.get("studentId");
+  const view = url.searchParams.get("view");
+  const limitRaw = url.searchParams.get("limit");
 
-  if (!lessonSlug || !studentId) {
-    return NextResponse.json(
-      { ok: false, error: "lessonSlug e studentId obrigatórios" },
-      { status: 400 },
-    );
+  if (!lessonSlug) {
+    return NextResponse.json({ ok: false, error: "lessonSlug obrigatório" }, { status: 400 });
   }
 
   const db = await getMongoDb();
   if (!db) {
+    if (!studentId && view === "ranking") {
+      return NextResponse.json({ ok: true, storage: "local", data: { items: [] } });
+    }
     return NextResponse.json({ ok: true, storage: "local", data: null });
+  }
+
+  if (!studentId && view === "ranking") {
+    const limitParsed = Number(limitRaw);
+    const limit =
+      Number.isFinite(limitParsed) && limitParsed > 0 ? Math.min(50, Math.floor(limitParsed)) : 12;
+
+    const docs = await db
+      .collection("lesson_responses")
+      .find(
+        { lessonSlug },
+        {
+          projection: {
+            _id: 0,
+            studentId: 1,
+            studentName: 1,
+            answers: 1,
+            updatedAt: 1,
+          },
+        },
+      )
+      .sort({ updatedAt: -1 })
+      .toArray();
+
+    const items = docs
+      .map((d: any) => {
+        const { points, filled } = scoreAnswers(d?.answers);
+        return {
+          studentId: String(d?.studentId ?? ""),
+          studentName: String(d?.studentName ?? d?.studentId ?? "Aluno"),
+          points,
+          filledFields: filled,
+          updatedAt: d?.updatedAt ?? null,
+        };
+      })
+      .filter((i) => i.studentName && i.points > 0)
+      .sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        const at = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const bt = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return bt - at;
+      })
+      .slice(0, limit);
+
+    return NextResponse.json({ ok: true, storage: "mongo", data: { items } });
+  }
+
+  if (!studentId) {
+    return NextResponse.json(
+      { ok: false, error: "studentId obrigatório" },
+      { status: 400 },
+    );
   }
 
   const doc = await db.collection("lesson_responses").findOne({
@@ -84,4 +173,3 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true, storage: "mongo", savedAt: now.toISOString() });
 }
-

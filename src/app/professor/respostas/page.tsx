@@ -3,6 +3,10 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { AppHeader } from "@/components/seminario/AppHeader";
 import { getMongoDb } from "@/lib/mongodb";
+import { exodo1213Lesson } from "@/features/lessons/exodo-12-13/config";
+import { exodo16Lesson } from "@/features/lessons/exodo-16/config";
+import { exodo2011Lesson } from "@/features/lessons/exodo-20-1-11/config";
+import { fazerComparacoesLesson } from "@/features/lessons/fazer-comparacoes/config";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +26,8 @@ export default async function TeacherResponsesPage() {
           .toArray()
       : [];
 
+  const lessons = [fazerComparacoesLesson, exodo2011Lesson, exodo16Lesson, exodo1213Lesson];
+
   return (
     <div className="min-h-dvh bg-white">
       <AppHeader />
@@ -39,12 +45,6 @@ export default async function TeacherResponsesPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href="/professor/aulas/exodo-16"
-              className="rounded-2xl bg-sud-blue px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25"
-            >
-              Gabarito da aula
-            </Link>
             <form action="/api/teacher/logout" method="post">
               <button className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-sud-gray">
                 Sair
@@ -52,6 +52,36 @@ export default async function TeacherResponsesPage() {
             </form>
           </div>
         </div>
+
+        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-slate-700">Gabaritos</div>
+              <div className="mt-1 text-sm text-slate-600">
+                Selecione a aula para ver o gabarito e as respostas.
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {lessons.map((lesson) => (
+              <Link
+                key={lesson.slug}
+                href={`/professor/aulas/${lesson.slug}`}
+                className="group rounded-3xl border border-slate-200 bg-sud-gray p-5 shadow-sm transition hover:bg-white"
+              >
+                <div className="text-sm font-semibold text-slate-700">Aula</div>
+                <div className="mt-1 text-lg font-bold tracking-tight text-slate-900">
+                  {lesson.title}
+                </div>
+                <div className="mt-2 text-sm text-slate-600">{lesson.theme}</div>
+                <div className="mt-4 inline-flex items-center justify-center rounded-2xl bg-sud-blue px-4 py-2 text-sm font-bold text-white shadow-sm transition group-hover:bg-sud-navy">
+                  Abrir gabarito
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
 
         <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <table className="min-w-full table-fixed text-left text-sm">

@@ -20,7 +20,7 @@ import { useLocalStorageState } from "@/hooks/useLocalStorageState";
 import { useStudentSession } from "@/hooks/useStudentSession";
 import { cn } from "@/lib/cn";
 
-import { exodo1213Lesson } from "./config";
+import { exodo2011Lesson } from "./config";
 
 type CommitmentPlan = {
   before: string;
@@ -29,7 +29,7 @@ type CommitmentPlan = {
 };
 
 function lessonKey(studentId: string, suffix: string) {
-  return `seminario:${studentId}:${exodo1213Lesson.slug}:${suffix}`;
+  return `seminario:${studentId}:${exodo2011Lesson.slug}:${suffix}`;
 }
 
 function IconByKey({ icon }: { icon: string }) {
@@ -51,11 +51,11 @@ function IconByKey({ icon }: { icon: string }) {
   }
 }
 
-export function Exodo1213LessonClient() {
+export function Exodo2011LessonClient() {
   const { session, isHydrated: isSessionHydrated, logout } = useStudentSession();
   const studentId = session?.id ?? "anon";
   const isLoggedIn = isSessionHydrated && Boolean(session);
-  const loginHref = `/login?next=${encodeURIComponent("/aulas/exodo-12-13")}`;
+  const loginHref = `/login?next=${encodeURIComponent("/aulas/exodo-20-1-11")}`;
 
   const icebreaker = useLocalStorageState(lessonKey(studentId, "icebreaker"), "", {});
   const discussionNotes = useLocalStorageState(
@@ -119,7 +119,7 @@ export function Exodo1213LessonClient() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          lessonSlug: exodo1213Lesson.slug,
+          lessonSlug: exodo2011Lesson.slug,
           studentId: session?.id ?? null,
           studentName: session?.name ?? null,
           plan: commitmentPlan,
@@ -178,7 +178,7 @@ export function Exodo1213LessonClient() {
     (async () => {
       try {
         const res = await fetch(
-          `/api/lesson-responses?lessonSlug=${encodeURIComponent(exodo1213Lesson.slug)}&studentId=${encodeURIComponent(studentIdForSync ?? "")}`,
+          `/api/lesson-responses?lessonSlug=${encodeURIComponent(exodo2011Lesson.slug)}&studentId=${encodeURIComponent(studentIdForSync ?? "")}`,
           { signal: controller.signal },
         );
         const json = (await res.json().catch(() => null)) as
@@ -238,7 +238,7 @@ export function Exodo1213LessonClient() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          lessonSlug: exodo1213Lesson.slug,
+          lessonSlug: exodo2011Lesson.slug,
           studentId: studentIdForSync,
           studentName: studentNameForSync,
           answers: answersPayload,
@@ -253,7 +253,7 @@ export function Exodo1213LessonClient() {
     setRankingState({ status: "loading" });
     const controller = new AbortController();
     fetch(
-      `/api/lesson-responses?lessonSlug=${encodeURIComponent(exodo1213Lesson.slug)}&view=ranking`,
+      `/api/lesson-responses?lessonSlug=${encodeURIComponent(exodo2011Lesson.slug)}&view=ranking`,
       { cache: "no-store", signal: controller.signal },
     )
       .then(async (r) => {
@@ -287,7 +287,7 @@ export function Exodo1213LessonClient() {
   return (
     <div className="min-h-dvh bg-white">
       <AppHeader
-        activeHref="/aulas/exodo-12-13"
+        activeHref="/aulas/exodo-20-1-11"
         studentName={session?.name ?? null}
         onLogout={logout}
       />
@@ -296,8 +296,8 @@ export function Exodo1213LessonClient() {
         <section className="relative">
           <div className="relative h-[64vh] min-h-[420px] w-full">
             <Image
-              src={exodo1213Lesson.hero.image.src}
-              alt={exodo1213Lesson.hero.image.alt}
+              src={exodo2011Lesson.hero.image.src}
+              alt={exodo2011Lesson.hero.image.alt}
               fill
               priority
               unoptimized
@@ -312,25 +312,23 @@ export function Exodo1213LessonClient() {
               <div className="w-full max-w-3xl">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 ring-1 ring-white/15 backdrop-blur">
                   <span className="h-2 w-2 rounded-full bg-sud-green" />
-                  {exodo1213Lesson.theme}
+                  {exodo2011Lesson.theme}
                 </div>
                 <h1 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-5xl">
-                  {exodo1213Lesson.title}
+                  {exodo2011Lesson.title}
                 </h1>
                 <p className="mt-3 text-base leading-relaxed text-white/90 sm:text-lg">
-                  {exodo1213Lesson.hero.subtext}
+                  {exodo2011Lesson.hero.subtext}
                 </p>
 
                 <div className="mt-6 rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur">
                   <div className="text-xl font-bold text-white sm:text-2xl">
-                    “{exodo1213Lesson.hero.quote}”
+                    “{exodo2011Lesson.hero.quote}”
                   </div>
-                  <div className="mt-1 text-sm text-white/80">
-                    Lucas 22:19
-                  </div>
+                  <div className="mt-1 text-sm text-white/80">Êxodo 20:3</div>
                 </div>
 
-                {exodo1213Lesson.referenceMaterial ? (
+                {exodo2011Lesson.referenceMaterial ? (
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <Link
                       href="#consulta"
@@ -374,14 +372,14 @@ export function Exodo1213LessonClient() {
           <Section
             id="quebra-de-gelo"
             title="Quebra de gelo"
-            subtitle="Comece simples: o que é sagrado para você tende a ser aquilo que você escolhe lembrar."
+            subtitle="Prioridades revelam quem é o primeiro em nossa vida."
           >
             <div className="grid gap-4 rounded-3xl border border-slate-200 bg-sud-gray p-5 sm:grid-cols-[1.2fr_auto] sm:items-end sm:gap-6 sm:p-7">
               <InputArea
-                label={exodo1213Lesson.icebreaker.question}
+                label={exodo2011Lesson.icebreaker.question}
                 value={icebreaker.state}
                 onChange={icebreaker.setState}
-                placeholder={exodo1213Lesson.icebreaker.placeholder}
+                placeholder={exodo2011Lesson.icebreaker.placeholder}
                 rows={4}
               />
               <div className="flex flex-col items-start gap-3">
@@ -390,7 +388,7 @@ export function Exodo1213LessonClient() {
                   onClick={onReflect}
                   className="inline-flex w-full items-center justify-center rounded-2xl bg-sud-blue px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25 sm:w-auto"
                 >
-                  {exodo1213Lesson.icebreaker.cta}
+                  {exodo2011Lesson.icebreaker.cta}
                 </button>
                 <div
                   className={cn(
@@ -406,16 +404,16 @@ export function Exodo1213LessonClient() {
 
           <div className="mt-10 sm:mt-14">
             <Section
-              id="pascoa"
-              title={exodo1213Lesson.passover.title}
-              subtitle={exodo1213Lesson.passover.subtitle}
+              id="mandamentos"
+              title={exodo2011Lesson.passover.title}
+              subtitle={exodo2011Lesson.passover.subtitle}
             >
               <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr] lg:items-stretch">
                 <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
                   <div className="relative h-56 w-full sm:h-72">
                     <Image
-                      src={exodo1213Lesson.passover.image.src}
-                      alt={exodo1213Lesson.passover.image.alt}
+                      src={exodo2011Lesson.passover.image.src}
+                      alt={exodo2011Lesson.passover.image.alt}
                       fill
                       unoptimized
                       className="object-cover"
@@ -428,17 +426,17 @@ export function Exodo1213LessonClient() {
                       Objetivo
                     </div>
                     <div className="mt-1 text-base font-bold text-slate-900">
-                      Ver Cristo nos símbolos
+                      Amar a Deus e colocá-Lo em primeiro lugar
                     </div>
                     <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                      Leia Êxodo 12:11–14 e marque palavras que mostrem
-                      repetição, lembrança e convênio.
+                      Leia Êxodo 20:1–11 e identifique os quatro primeiros
+                      mandamentos.
                     </p>
                   </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                  {exodo1213Lesson.passover.cards.map((card) => (
+                  {exodo2011Lesson.passover.cards.map((card) => (
                     <Card
                       key={card.key}
                       title={card.title}
@@ -455,14 +453,14 @@ export function Exodo1213LessonClient() {
 
           <div className="mt-10 sm:mt-14">
             <Section
-              id="sacramento"
-              title={exodo1213Lesson.sacrament.title}
-              subtitle={exodo1213Lesson.sacrament.subtitle}
+              id="sabado"
+              title={exodo2011Lesson.sacrament.title}
+              subtitle={exodo2011Lesson.sacrament.subtitle}
               accent="green"
             >
               <div className="grid gap-6 lg:grid-cols-[1fr_1.15fr] lg:items-stretch">
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                  {exodo1213Lesson.sacrament.cards.map((card) => (
+                  {exodo2011Lesson.sacrament.cards.map((card) => (
                     <Card
                       key={card.key}
                       title={card.title}
@@ -478,8 +476,8 @@ export function Exodo1213LessonClient() {
                 <div className="relative overflow-hidden rounded-3xl border border-sud-green/20 bg-white shadow-sm ring-1 ring-sud-green/10">
                   <div className="relative h-56 w-full sm:h-72">
                     <Image
-                      src={exodo1213Lesson.sacrament.image.src}
-                      alt={exodo1213Lesson.sacrament.image.alt}
+                      src={exodo2011Lesson.sacrament.image.src}
+                      alt={exodo2011Lesson.sacrament.image.alt}
                       fill
                       unoptimized
                       className="object-cover"
@@ -492,11 +490,11 @@ export function Exodo1213LessonClient() {
                       Pergunta-guia
                     </div>
                     <div className="mt-1 text-base font-bold text-slate-900">
-                      O que significa “lembrar sempre” na prática?
+                      O que vai ficar em primeiro lugar nesta semana?
                     </div>
                     <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                      Pense em uma atitude concreta que você quer levar para a
-                      semana. Não precisa ser grande — precisa ser real.
+                      Escolha uma decisão concreta e conecte-a a uma bênção que
+                      você deseja receber do Senhor.
                     </p>
                   </div>
                 </div>
@@ -507,8 +505,8 @@ export function Exodo1213LessonClient() {
           <div className="mt-10 sm:mt-14">
             <Section
               id="discussao"
-              title={exodo1213Lesson.discussion.title}
-              subtitle={exodo1213Lesson.discussion.subtitle}
+              title={exodo2011Lesson.discussion.title}
+              subtitle={exodo2011Lesson.discussion.subtitle}
             >
               <div className="grid gap-5 lg:grid-cols-[1fr_1fr] lg:items-start">
                 <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
@@ -516,7 +514,7 @@ export function Exodo1213LessonClient() {
                     Perguntas
                   </div>
                   <div className="mt-3 space-y-3">
-                    {exodo1213Lesson.discussion.questions.map((q) => (
+                    {exodo2011Lesson.discussion.questions.map((q) => (
                       <div
                         key={q}
                         className="rounded-2xl border border-slate-200 bg-sud-gray px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
@@ -543,41 +541,33 @@ export function Exodo1213LessonClient() {
           <div className="mt-10 sm:mt-14">
             <Section
               id="plano"
-              title={exodo1213Lesson.actionPlan.title}
-              subtitle={exodo1213Lesson.actionPlan.subtitle}
+              title={exodo2011Lesson.actionPlan.title}
+              subtitle={exodo2011Lesson.actionPlan.subtitle}
               accent="green"
             >
               <div className="rounded-3xl border border-sud-green/20 bg-white p-5 shadow-sm ring-1 ring-sud-green/10 sm:p-7">
                 <div className="grid gap-4 lg:grid-cols-3">
                   <InputArea
-                    label={exodo1213Lesson.actionPlan.fields[0]?.label ?? "Antes"}
+                    label={exodo2011Lesson.actionPlan.fields[0]?.label ?? "Antes"}
                     value={actionBefore.state}
                     onChange={actionBefore.setState}
-                    placeholder={
-                      exodo1213Lesson.actionPlan.fields[0]?.placeholder ?? ""
-                    }
+                    placeholder={exodo2011Lesson.actionPlan.fields[0]?.placeholder ?? ""}
                     rows={6}
                     tone="spiritual"
                   />
                   <InputArea
-                    label={
-                      exodo1213Lesson.actionPlan.fields[1]?.label ?? "Durante"
-                    }
+                    label={exodo2011Lesson.actionPlan.fields[1]?.label ?? "Durante"}
                     value={actionDuring.state}
                     onChange={actionDuring.setState}
-                    placeholder={
-                      exodo1213Lesson.actionPlan.fields[1]?.placeholder ?? ""
-                    }
+                    placeholder={exodo2011Lesson.actionPlan.fields[1]?.placeholder ?? ""}
                     rows={6}
                     tone="spiritual"
                   />
                   <InputArea
-                    label={exodo1213Lesson.actionPlan.fields[2]?.label ?? "Depois"}
+                    label={exodo2011Lesson.actionPlan.fields[2]?.label ?? "Depois"}
                     value={actionAfter.state}
                     onChange={actionAfter.setState}
-                    placeholder={
-                      exodo1213Lesson.actionPlan.fields[2]?.placeholder ?? ""
-                    }
+                    placeholder={exodo2011Lesson.actionPlan.fields[2]?.placeholder ?? ""}
                     rows={6}
                     tone="spiritual"
                   />
@@ -620,7 +610,7 @@ export function Exodo1213LessonClient() {
                           : "hover:bg-emerald-700",
                       )}
                     >
-                      {isLoggedIn ? exodo1213Lesson.actionPlan.cta : "Entre para registrar"}
+                      {isLoggedIn ? exodo2011Lesson.actionPlan.cta : "Entre para registrar"}
                     </button>
                   </div>
                 </div>
@@ -671,7 +661,7 @@ export function Exodo1213LessonClient() {
             </Section>
           </div>
 
-          {exodo1213Lesson.referenceMaterial ? (
+          {exodo2011Lesson.referenceMaterial ? (
             <div className="mt-10 sm:mt-14">
               <Section
                 id="consulta"
@@ -686,7 +676,7 @@ export function Exodo1213LessonClient() {
                           Abrir resumo e roteiro sugerido
                         </div>
                         <div className="mt-1 text-sm text-slate-600">
-                          {exodo1213Lesson.referenceMaterial.title}
+                          {exodo2011Lesson.referenceMaterial.title}
                         </div>
                       </div>
                       <div className="rounded-full bg-sud-gray px-3 py-2 text-xs font-semibold text-slate-700 transition group-open:bg-white group-open:ring-1 group-open:ring-slate-200">
@@ -701,7 +691,7 @@ export function Exodo1213LessonClient() {
                         Resumo (em tópicos)
                       </div>
                       <div className="mt-4 space-y-4">
-                        {exodo1213Lesson.referenceMaterial.sections.map((section) => (
+                        {exodo2011Lesson.referenceMaterial.sections.map((section) => (
                           <div key={section.title}>
                             <div className="text-sm font-bold text-slate-900">
                               {section.title}
@@ -721,13 +711,13 @@ export function Exodo1213LessonClient() {
                         Roteiros de estudo sugeridos
                       </div>
 
-                      {exodo1213Lesson.referenceMaterial.scriptureStudy ? (
+                      {exodo2011Lesson.referenceMaterial.scriptureStudy ? (
                         <div className="mt-4">
                           <div className="text-sm font-bold text-slate-900">
-                            {exodo1213Lesson.referenceMaterial.scriptureStudy.title}
+                            {exodo2011Lesson.referenceMaterial.scriptureStudy.title}
                           </div>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {exodo1213Lesson.referenceMaterial.scriptureStudy.passages.map(
+                            {exodo2011Lesson.referenceMaterial.scriptureStudy.passages.map(
                               (p) => (
                                 <span
                                   key={p}
@@ -739,34 +729,7 @@ export function Exodo1213LessonClient() {
                             )}
                           </div>
                           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                            {exodo1213Lesson.referenceMaterial.scriptureStudy.prompts.map(
-                              (q) => (
-                                <li key={q}>{q}</li>
-                              ),
-                            )}
-                          </ul>
-                        </div>
-                      ) : null}
-
-                      {exodo1213Lesson.referenceMaterial.sacramentStudy ? (
-                        <div className="mt-6">
-                          <div className="text-sm font-bold text-slate-900">
-                            Páscoa e sacramento
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {exodo1213Lesson.referenceMaterial.sacramentStudy.passages.map(
-                              (p) => (
-                                <span
-                                  key={p}
-                                  className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200"
-                                >
-                                  {p}
-                                </span>
-                              ),
-                            )}
-                          </div>
-                          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                            {exodo1213Lesson.referenceMaterial.sacramentStudy.prompts.map(
+                            {exodo2011Lesson.referenceMaterial.scriptureStudy.prompts.map(
                               (q) => (
                                 <li key={q}>{q}</li>
                               ),
@@ -777,7 +740,7 @@ export function Exodo1213LessonClient() {
 
                       <div className="mt-6">
                         <a
-                          href={exodo1213Lesson.referenceMaterial.sourceUrl}
+                          href={exodo2011Lesson.referenceMaterial.sourceUrl}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center justify-center rounded-2xl bg-sud-blue px-4 py-2 text-sm font-bold text-white transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25"
@@ -799,11 +762,10 @@ export function Exodo1213LessonClient() {
           <div className="font-semibold text-slate-900">
             Seminário SUD — Aprender, Refletir, Aplicar
           </div>
-          <div className="text-slate-600">
-            Espaço reservado para futuras aulas
-          </div>
+          <div className="text-slate-600">Espaço reservado para futuras aulas</div>
         </div>
       </footer>
     </div>
   );
 }
+

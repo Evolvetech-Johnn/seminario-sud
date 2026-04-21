@@ -54,6 +54,8 @@ function IconByKey({ icon }: { icon: string }) {
 export function Exodo16LessonClient() {
   const { session, isHydrated: isSessionHydrated, logout } = useStudentSession();
   const studentId = session?.id ?? "anon";
+  const isLoggedIn = isSessionHydrated && Boolean(session);
+  const loginHref = `/login?next=${encodeURIComponent("/aulas/exodo-16")}`;
 
   const icebreaker = useLocalStorageState(lessonKey(studentId, "icebreaker"), "", {});
   const discussionNotes = useLocalStorageState(
@@ -86,6 +88,15 @@ export function Exodo16LessonClient() {
     | { status: "error" }
   >({ status: "idle" });
 
+  const [rankingState, setRankingState] = useState<
+    | { status: "idle" | "loading" }
+    | {
+        status: "loaded";
+        items: Array<{ studentName: string; points: number; filledFields: number }>;
+      }
+    | { status: "error" }
+  >({ status: "idle" });
+
   const commitmentPlan: CommitmentPlan = useMemo(
     () => ({
       before: actionBeforeValue,
@@ -101,6 +112,7 @@ export function Exodo16LessonClient() {
   }, []);
 
   const onSaveCommitment = useCallback(async () => {
+    if (!session) return;
     setSaveState({ status: "saving" });
     try {
       const res = await fetch("/api/commitment", {
@@ -237,38 +249,40 @@ export function Exodo16LessonClient() {
     return () => window.clearTimeout(timeout);
   }, [answersPayload, canSync, studentIdForSync, studentNameForSync]);
 
-  if (isSessionHydrated && !session) {
-    return (
-      <div className="min-h-dvh bg-white">
-        <AppHeader activeHref="/aulas/exodo-16" />
-        <main className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
-          <div className="rounded-3xl border border-slate-200 bg-sud-gray p-6 shadow-sm sm:p-10">
-            <div className="text-sm font-semibold text-slate-700">
-              Identificação do aluno
-            </div>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Entre para registrar suas respostas
-            </h1>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
-              Cada aluno salva suas respostas separadamente neste dispositivo.
-            </p>
+  useEffect(() => {
+    setRankingState({ status: "loading" });
+    const controller = new AbortController();
+    fetch(`/api/lesson-responses?lessonSlug=${encodeURIComponent(exodo16Lesson.slug)}&view=ranking`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (r) => {
+        const j = (await r.json().catch(() => null)) as
+          | {
+              ok?: boolean;
+              data?: {
+                items?: Array<{ studentName?: string; points?: number; filledFields?: number }>;
+              };
+            }
+          | null;
+        if (!r.ok || !j?.ok) {
+          setRankingState({ status: "error" });
+          return;
+        }
+        const items =
+          j?.data?.items?.map((it) => ({
+            studentName: String(it.studentName ?? "Aluno"),
+            points: Number(it.points ?? 0),
+            filledFields: Number(it.filledFields ?? 0),
+          })) ?? [];
+        setRankingState({ status: "loaded", items });
+      })
+      .catch(() => {
+        setRankingState({ status: "error" });
+      });
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <Link
-                href={`/login?next=${encodeURIComponent("/aulas/exodo-16")}`}
-                className="inline-flex items-center justify-center rounded-2xl bg-sud-blue px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25"
-              >
-                Ir para login
-              </Link>
-              <div className="text-sm text-slate-600">
-                Dica: use seu nome completo para evitar confusão.
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
+    return () => controller.abort();
+  }, []);
 
   return (
     <div className="min-h-dvh bg-white">
@@ -330,6 +344,31 @@ export function Exodo16LessonClient() {
         </section>
 
         <div className="py-10 sm:py-14">
+          {isSessionHydrated && !session ? (
+            <div className="mx-auto max-w-6xl px-4 sm:px-6">
+              <div className="rounded-3xl border border-slate-200 bg-sud-gray p-5 shadow-sm sm:p-7">
+                <div className="text-sm font-semibold text-slate-900">
+                  Aula pública
+                </div>
+                <div className="mt-1 text-sm text-slate-600">
+                  Você pode ver toda a aula. Para registrar e sincronizar suas
+                  respostas, faça login com seu nome.
+                </div>
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <Link
+                    href={loginHref}
+                    className="inline-flex items-center justify-center rounded-2xl bg-sud-blue px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25"
+                  >
+                    Entrar para registrar
+                  </Link>
+                  <div className="text-sm text-slate-600">
+                    Dica: use seu nome completo para evitar confusão.
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <Section
             id="quebra-de-gelo"
             title="Quebra de gelo"
@@ -536,7 +575,9 @@ export function Exodo16LessonClient() {
 
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm text-slate-600">
-                    Seu compromisso fica salvo neste dispositivo (local).
+                    {isLoggedIn
+                      ? "Suas respostas são registradas automaticamente."
+                      : "Você pode fazer um rascunho, mas precisa fazer login para registrar suas respostas."}
                   </div>
                   <div className="flex items-center gap-3">
                     <div
@@ -561,18 +602,61 @@ export function Exodo16LessonClient() {
                     <button
                       type="button"
                       onClick={onSaveCommitment}
-                      disabled={saveState.status === "saving"}
+                      disabled={!isLoggedIn || saveState.status === "saving"}
                       className={cn(
                         "inline-flex items-center justify-center rounded-2xl bg-sud-green px-5 py-3 text-sm font-bold text-white shadow-sm transition focus:outline-none focus:ring-4 focus:ring-sud-green/25",
-                        saveState.status === "saving"
+                        !isLoggedIn || saveState.status === "saving"
                           ? "cursor-not-allowed opacity-80"
                           : "hover:bg-emerald-700",
                       )}
                     >
-                      {exodo16Lesson.actionPlan.cta}
+                      {isLoggedIn ? exodo16Lesson.actionPlan.cta : "Entre para registrar"}
                     </button>
                   </div>
                 </div>
+              </div>
+            </Section>
+          </div>
+
+          <div className="mt-10 sm:mt-14">
+            <Section
+              id="ranking"
+              title="Ranking da turma"
+              subtitle="Pontos são calculados pela participação: preencher campos soma pontos, e completar tudo dá bônus."
+            >
+              <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+                {rankingState.status === "loading" ? (
+                  <div className="text-sm font-semibold text-slate-600">Carregando…</div>
+                ) : rankingState.status === "error" ? (
+                  <div className="text-sm font-semibold text-slate-600">
+                    Não foi possível carregar o ranking agora.
+                  </div>
+                ) : rankingState.status === "loaded" && rankingState.items.length > 0 ? (
+                  <ol className="space-y-3">
+                    {rankingState.items.map((it, idx) => (
+                      <li
+                        key={`${it.studentName}-${idx}`}
+                        className="flex items-center justify-between gap-4 rounded-2xl bg-sud-gray px-4 py-3"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-bold text-slate-900">
+                            {idx + 1}. {it.studentName}
+                          </div>
+                          <div className="mt-1 text-xs font-semibold text-slate-600">
+                            {Math.min(5, Math.max(0, it.filledFields))}/5 campos
+                          </div>
+                        </div>
+                        <div className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-800 ring-1 ring-slate-200">
+                          {it.points} pts
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <div className="text-sm text-slate-600">
+                    Ainda não há pontuação registrada para esta aula.
+                  </div>
+                )}
               </div>
             </Section>
           </div>
@@ -684,4 +768,3 @@ export function Exodo16LessonClient() {
     </div>
   );
 }
-
