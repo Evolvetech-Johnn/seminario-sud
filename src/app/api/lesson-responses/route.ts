@@ -96,18 +96,46 @@ export async function GET(req: Request) {
       .sort({ updatedAt: -1 })
       .toArray();
 
-    const items = docs
-      .map((d: any) => {
-        const { points, filled } = scoreAnswers(d?.answers);
-        return {
-          studentId: String(d?.studentId ?? ""),
-          studentName: String(d?.studentName ?? d?.studentId ?? "Aluno"),
+    const byStudentId = new Map<
+      string,
+      { studentId: string; studentName: string; points: number; filledFields: number; updatedAt: any }
+    >();
+
+    for (const d of docs as any[]) {
+      const studentId = String(d?.studentId ?? "").trim();
+      const studentName = String(d?.studentName ?? "").trim();
+      if (!studentId) continue;
+      if (studentId === "anon") continue;
+      if (!studentName) continue;
+      const { points, filled } = scoreAnswers(d?.answers);
+      if (points <= 0) continue;
+
+      const current = byStudentId.get(studentId);
+      if (!current) {
+        byStudentId.set(studentId, {
+          studentId,
+          studentName,
           points,
           filledFields: filled,
           updatedAt: d?.updatedAt ?? null,
-        };
-      })
-      .filter((i) => i.studentName && i.points > 0)
+        });
+        continue;
+      }
+
+      const existingTime = current.updatedAt ? new Date(current.updatedAt).getTime() : 0;
+      const incomingTime = d?.updatedAt ? new Date(d.updatedAt).getTime() : 0;
+      if (incomingTime > existingTime) {
+        byStudentId.set(studentId, {
+          studentId,
+          studentName,
+          points,
+          filledFields: filled,
+          updatedAt: d?.updatedAt ?? null,
+        });
+      }
+    }
+
+    const items = Array.from(byStudentId.values())
       .sort((a, b) => {
         if (b.points !== a.points) return b.points - a.points;
         const at = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
@@ -141,9 +169,9 @@ export async function POST(req: Request) {
   const studentId = asLimitedString(body?.studentId, 120) || null;
   const studentName = asLimitedString(body?.studentName, 120) || null;
 
-  if (!lessonSlug || !studentId) {
+  if (!lessonSlug || !studentId || !studentName) {
     return NextResponse.json(
-      { ok: false, error: "lessonSlug e studentId obrigatórios" },
+      { ok: false, error: "lessonSlug, studentId e studentName obrigatórios" },
       { status: 400 },
     );
   }

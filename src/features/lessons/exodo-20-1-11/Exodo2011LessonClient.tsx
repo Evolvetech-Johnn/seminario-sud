@@ -92,7 +92,12 @@ export function Exodo2011LessonClient() {
     | { status: "idle" | "loading" }
     | {
         status: "loaded";
-        items: Array<{ studentName: string; points: number; filledFields: number }>;
+        items: Array<{
+          studentId: string;
+          studentName: string;
+          points: number;
+          filledFields: number;
+        }>;
       }
     | { status: "error" }
   >({ status: "idle" });
@@ -261,7 +266,12 @@ export function Exodo2011LessonClient() {
           | {
               ok?: boolean;
               data?: {
-                items?: Array<{ studentName?: string; points?: number; filledFields?: number }>;
+                items?: Array<{
+                  studentId?: string;
+                  studentName?: string;
+                  points?: number;
+                  filledFields?: number;
+                }>;
               };
             }
           | null;
@@ -271,6 +281,7 @@ export function Exodo2011LessonClient() {
         }
         const items =
           j?.data?.items?.map((it) => ({
+            studentId: String(it.studentId ?? ""),
             studentName: String(it.studentName ?? "Aluno"),
             points: Number(it.points ?? 0),
             filledFields: Number(it.filledFields ?? 0),
@@ -351,8 +362,8 @@ export function Exodo2011LessonClient() {
                   Aula pública
                 </div>
                 <div className="mt-1 text-sm text-slate-600">
-                  Você pode ver toda a aula. Para registrar e sincronizar suas
-                  respostas, faça login com seu nome.
+                  Você pode ver toda a aula. Para registrar e sincronizar suas respostas, faça
+                  login com seu login e senha.
                 </div>
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <Link
@@ -635,7 +646,7 @@ export function Exodo2011LessonClient() {
                   <ol className="space-y-3">
                     {rankingState.items.map((it, idx) => (
                       <li
-                        key={`${it.studentName}-${idx}`}
+                        key={it.studentId || `${it.studentName}-${idx}`}
                         className="flex items-center justify-between gap-4 rounded-2xl bg-sud-gray px-4 py-3"
                       >
                         <div className="min-w-0">
@@ -768,4 +779,3 @@ export function Exodo2011LessonClient() {
     </div>
   );
 }
-

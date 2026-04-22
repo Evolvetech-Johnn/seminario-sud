@@ -24,7 +24,7 @@ export function LoginClient() {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [showCode, setShowCode] = useState(false);
-  const [status, setStatus] = useState<"idle" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isHydrated && session) {
@@ -60,18 +60,21 @@ export function LoginClient() {
                 Entre para registrar suas respostas
               </h1>
               <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
-                As respostas ficam separadas por aluno. O código é opcional e pode funcionar como
-                uma “senha” simples para você se identificar em outro dispositivo.
+                As respostas ficam separadas por aluno. Para entrar no ranking, use login e senha
+                (obrigatórios) para manter sua identificação consistente.
               </p>
             </div>
 
             <div className="px-6 py-6 sm:px-10 sm:py-8">
               <div className="grid gap-4">
                 <label className="block">
-                  <div className="text-sm font-semibold text-slate-900">Nome</div>
+                  <div className="text-sm font-semibold text-slate-900">Login</div>
                   <input
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (error) setError(null);
+                    }}
                     placeholder="Ex: João Pedro"
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sud-blue/60 focus:ring-4 focus:ring-sud-blue/15"
                   />
@@ -79,9 +82,7 @@ export function LoginClient() {
 
                 <div>
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm font-semibold text-slate-900">
-                      Código (opcional)
-                    </div>
+                    <div className="text-sm font-semibold text-slate-900">Senha</div>
                     <button
                       type="button"
                       onClick={() => setShowCode((v) => !v)}
@@ -93,8 +94,11 @@ export function LoginClient() {
                   <input
                     type={showCode ? "text" : "password"}
                     value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    placeholder="Ex: 1234"
+                    onChange={(e) => {
+                      setCode(e.target.value);
+                      if (error) setError(null);
+                    }}
+                    placeholder="Mínimo 4 caracteres"
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sud-blue/60 focus:ring-4 focus:ring-sud-blue/15"
                   />
                 </div>
@@ -104,10 +108,10 @@ export function LoginClient() {
                 <div
                   className={cn(
                     "text-sm font-semibold text-red-600 transition-opacity",
-                    status === "error" ? "opacity-100" : "opacity-0",
+                    error ? "opacity-100" : "opacity-0",
                   )}
                 >
-                  Digite seu nome para continuar.
+                  {error ?? " "}
                 </div>
                 <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
                   <button
@@ -115,7 +119,7 @@ export function LoginClient() {
                     onClick={() => {
                       const result = login(name, code);
                       if (!result.ok) {
-                        setStatus("error");
+                        setError(result.error ?? "Não foi possível entrar");
                         return;
                       }
                       router.replace(nextUrl);
