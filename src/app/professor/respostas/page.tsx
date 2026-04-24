@@ -26,6 +26,7 @@ export default async function TeacherResponsesPage() {
           .toArray()
       : [];
 
+  const todaySlug = fazerComparacoesLesson.slug;
   const lessons = [fazerComparacoesLesson, exodo2011Lesson, exodo16Lesson, exodo1213Lesson];
 
   return (
@@ -64,22 +65,36 @@ export default async function TeacherResponsesPage() {
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {lessons.map((lesson) => (
+            {lessons.map((lesson) => {
+              const isToday = lesson.slug === todaySlug;
+
+              return (
               <Link
                 key={lesson.slug}
                 href={`/professor/aulas/${lesson.slug}`}
-                className="group rounded-3xl border border-slate-200 bg-sud-gray p-5 shadow-sm transition hover:bg-white"
+                className={
+                  isToday
+                    ? "group rounded-3xl border border-sud-green/35 bg-sud-gray p-5 shadow-sm ring-2 ring-sud-green/10 transition hover:bg-white"
+                    : "group rounded-3xl border border-slate-200 bg-sud-gray p-5 shadow-sm transition hover:bg-white"
+                }
               >
                 <div className="text-sm font-semibold text-slate-700">Aula</div>
                 <div className="mt-1 text-lg font-bold tracking-tight text-slate-900">
                   {lesson.title}
                 </div>
                 <div className="mt-2 text-sm text-slate-600">{lesson.theme}</div>
+                {isToday ? (
+                  <div className="mt-3 inline-flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-sud-green" />
+                    <div className="text-xs font-bold text-sud-green">Aula de hoje</div>
+                  </div>
+                ) : null}
                 <div className="mt-4 inline-flex items-center justify-center rounded-2xl bg-sud-blue px-4 py-2 text-sm font-bold text-white shadow-sm transition group-hover:bg-sud-navy">
                   Abrir gabarito
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </section>
 

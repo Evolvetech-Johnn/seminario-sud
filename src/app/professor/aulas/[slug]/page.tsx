@@ -23,6 +23,7 @@ export default async function TeacherLessonAnswerKeyPage({ params }: Props) {
 
   const { slug } = await params;
 
+  const todaySlug = fazerComparacoesLesson.slug;
   const lessons = [fazerComparacoesLesson, exodo2011Lesson, exodo16Lesson, exodo1213Lesson];
   const lesson =
     slug === fazerComparacoesLesson.slug
@@ -83,6 +84,7 @@ export default async function TeacherLessonAnswerKeyPage({ params }: Props) {
           <div className="flex flex-wrap gap-2 px-5 py-4 sm:px-7">
             {lessons.map((l) => {
               const active = l.slug === slug;
+              const isToday = l.slug === todaySlug;
               return (
                 <Link
                   key={l.slug}
@@ -90,10 +92,19 @@ export default async function TeacherLessonAnswerKeyPage({ params }: Props) {
                   className={
                     active
                       ? "rounded-full bg-sud-blue px-4 py-2 text-sm font-bold text-white shadow-sm"
-                      : "rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-sud-gray"
+                      : isToday
+                        ? "rounded-full border border-sud-green/40 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-2 ring-sud-green/10 transition hover:bg-sud-gray"
+                        : "rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-sud-gray"
                   }
                 >
-                  {l.title}
+                  <span className="inline-flex items-center gap-2">
+                    {l.title}
+                    {isToday ? (
+                      <span className="rounded-full bg-sud-green/10 px-2 py-0.5 text-[11px] font-bold text-sud-green ring-1 ring-sud-green/25">
+                        Hoje
+                      </span>
+                    ) : null}
+                  </span>
                 </Link>
               );
             })}
