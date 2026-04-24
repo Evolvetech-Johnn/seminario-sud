@@ -15,14 +15,9 @@ const todayLessonSlug = "fazer-comparacoes" as const;
 
 const lessonItems = [
   {
-    slug: "fazer-comparacoes",
-    title: "Fazer Comparações",
-    theme: "Habilidade de estudo: comparar para identificar verdades preciosas",
-  },
-  {
-    slug: "exodo-20-1-11",
-    title: "Deus em Primeiro Lugar",
-    theme: "Êxodo 20:1–11 (Os Dez Mandamentos — amar a Deus acima de tudo)",
+    slug: "exodo-12-13",
+    title: "Memória Sagrada",
+    theme: "Êxodo 12–13 (Páscoa e Sacramento)",
   },
   {
     slug: "exodo-16",
@@ -30,9 +25,14 @@ const lessonItems = [
     theme: "Êxodo 16 (Maná e confiar no Senhor diariamente)",
   },
   {
-    slug: "exodo-12-13",
-    title: "Memória Sagrada",
-    theme: "Êxodo 12–13 (Páscoa e Sacramento)",
+    slug: "exodo-20-1-11",
+    title: "Deus em Primeiro Lugar",
+    theme: "Êxodo 20:1–11 (Os Dez Mandamentos — amar a Deus acima de tudo)",
+  },
+  {
+    slug: "fazer-comparacoes",
+    title: "Fazer Comparações",
+    theme: "Habilidade de estudo: comparar para identificar verdades preciosas",
   },
 ] as const;
 
