@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { getMongoDb } from "@/lib/mongodb";
+import { readTeacherFromSessionToken, TEACHER_SESSION_COOKIE } from "@/lib/teacherSession";
 
 function asString(value: unknown, maxLen: number) {
   if (typeof value !== "string") return "";
@@ -9,7 +10,8 @@ function asString(value: unknown, maxLen: number) {
 }
 
 export async function GET(_req: Request, context: { params: Promise<{ id: string }> }) {
-  const auth = (await cookies()).get("teacherAuth")?.value === "1";
+  const store = await cookies();
+  const auth = Boolean(readTeacherFromSessionToken(store.get(TEACHER_SESSION_COOKIE)?.value ?? ""));
   if (!auth) return NextResponse.json({ ok: false, error: "Não autorizado" }, { status: 401 });
 
   const { id } = await context.params;
@@ -33,4 +35,3 @@ export async function GET(_req: Request, context: { params: Promise<{ id: string
 
   return NextResponse.json({ ok: true, data: { session, records } });
 }
-

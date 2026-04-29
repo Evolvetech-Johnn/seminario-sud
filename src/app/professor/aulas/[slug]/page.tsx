@@ -4,20 +4,28 @@ import { cookies } from "next/headers";
 
 import { AppHeader } from "@/components/seminario/AppHeader";
 import { getMongoDb } from "@/lib/mongodb";
+import { readTeacherFromSessionToken, TEACHER_SESSION_COOKIE } from "@/lib/teacherSession";
 
 export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ slug: string }>;
+  searchParams?: {
+    limit?: string;
+  };
 };
 
-export default async function TeacherLessonAnswerKeyPage({ params }: Props) {
-  const isAuthed = (await cookies()).get("teacherAuth")?.value === "1";
+export default async function TeacherLessonAnswerKeyPage({ params, searchParams }: Props) {
+  const store = await cookies();
+  const isAuthed = Boolean(readTeacherFromSessionToken(store.get(TEACHER_SESSION_COOKIE)?.value ?? ""));
   if (!isAuthed) {
     redirect(`/professor/login?next=${encodeURIComponent(`/professor/aulas/${(await params).slug}`)}`);
   }
 
   const { slug } = await params;
+
+  const limitParsed = Number(searchParams?.limit);
+  const limit = Number.isFinite(limitParsed) && limitParsed > 0 ? Math.min(500, Math.floor(limitParsed)) : 200;
 
   const db = await getMongoDb();
   const docs =
@@ -26,6 +34,7 @@ export default async function TeacherLessonAnswerKeyPage({ params }: Props) {
           .collection("lesson_responses")
           .find({ lessonSlug: slug }, { projection: { _id: 0 } })
           .sort({ updatedAt: -1 })
+          .limit(limit)
           .toArray()
       : [];
 

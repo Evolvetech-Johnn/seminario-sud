@@ -3,9 +3,11 @@ import { cookies } from "next/headers";
 
 import { allLessonMetas } from "@/features/lessons/lessonMetas";
 import { getMongoDb } from "@/lib/mongodb";
+import { readTeacherFromSessionToken, TEACHER_SESSION_COOKIE } from "@/lib/teacherSession";
 
 export async function GET() {
-  const auth = (await cookies()).get("teacherAuth")?.value === "1";
+  const store = await cookies();
+  const auth = Boolean(readTeacherFromSessionToken(store.get(TEACHER_SESSION_COOKIE)?.value ?? ""));
   if (!auth) return NextResponse.json({ ok: false, error: "Não autorizado" }, { status: 401 });
 
   const totalLessons = allLessonMetas.length;
@@ -29,4 +31,3 @@ export async function GET() {
     data: { totalLessons, totalStudents, averageProgress },
   });
 }
-

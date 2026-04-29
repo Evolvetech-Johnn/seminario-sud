@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { getMongoDb } from "@/lib/mongodb";
+import { readTeacherFromSessionToken, TEACHER_SESSION_COOKIE } from "@/lib/teacherSession";
+import { requireSameOrigin, rateLimit } from "@/lib/server/security";
 
 function normalizeEmail(raw: string) {
   return raw.trim().toLowerCase();
@@ -13,8 +15,19 @@ function hashPassword(password: string, salt: string) {
   return buf.toString("base64");
 }
 
-export async function POST() {
-  const auth = (await cookies()).get("teacherAuth")?.value === "1";
+export async function POST(req: Request) {
+  const sameOrigin = requireSameOrigin(req);
+  if (!sameOrigin.ok) return NextResponse.json({ ok: false, error: sameOrigin.error }, { status: 403 });
+  const rl = rateLimit(req, "admin_seed", { windowMs: 60_000, max: 3 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Muitas requisições. Tente novamente em instantes." },
+      { status: 429, headers: { "retry-after": String(rl.retryAfterSeconds) } },
+    );
+  }
+
+  const store = await cookies();
+  const auth = Boolean(readTeacherFromSessionToken(store.get(TEACHER_SESSION_COOKIE)?.value ?? ""));
   if (!auth) return NextResponse.json({ ok: false, error: "Não autorizado" }, { status: 401 });
 
   const db = await getMongoDb();

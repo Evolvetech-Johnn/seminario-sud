@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { requireSameOrigin, rateLimit } from "@/lib/server/security";
+
 function safeNextUrl(value: string | null) {
   if (!value) return "/professor/login";
   if (!value.startsWith("/")) return "/professor/login";
@@ -9,6 +11,16 @@ function safeNextUrl(value: string | null) {
 }
 
 export async function POST(req: Request) {
+  const sameOrigin = requireSameOrigin(req);
+  if (!sameOrigin.ok) return NextResponse.json({ ok: false, error: sameOrigin.error }, { status: 403 });
+  const rl = rateLimit(req, "teacher_logout", { windowMs: 60_000, max: 60 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Muitas requisições. Tente novamente em instantes." },
+      { status: 429, headers: { "retry-after": String(rl.retryAfterSeconds) } },
+    );
+  }
+
   const url = new URL(req.url);
   const nextUrl = safeNextUrl(url.searchParams.get("next"));
   const accept = req.headers.get("accept") ?? "";
@@ -18,6 +30,15 @@ export async function POST(req: Request) {
     ? NextResponse.json({ ok: true })
     : NextResponse.redirect(new URL(nextUrl, url.origin), 303);
 
+  res.cookies.set({
+    name: "teacherSession",
+    value: "",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
   res.cookies.set({
     name: "teacherAuth",
     value: "",

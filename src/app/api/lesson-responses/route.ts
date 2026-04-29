@@ -84,6 +84,9 @@ export async function GET(req: Request) {
       return NextResponse.json({ ok: false, error: "studentId obrigatório" }, { status: 400 });
     }
 
+    const limitParsed = Number(limitRaw);
+    const limit = Number.isFinite(limitParsed) && limitParsed > 0 ? Math.min(500, Math.floor(limitParsed)) : 200;
+
     const docs = await db
       .collection("lesson_responses")
       .find(
@@ -99,6 +102,7 @@ export async function GET(req: Request) {
         },
       )
       .sort({ updatedAt: -1 })
+      .limit(limit)
       .toArray();
 
     const items = (docs as any[]).map((d) => {
@@ -131,61 +135,42 @@ export async function GET(req: Request) {
 
     const docs = await db
       .collection("lesson_responses")
-      .find(
-        { lessonSlug },
+      .aggregate([
+        { $match: { lessonSlug } },
+        { $sort: { updatedAt: -1 } },
         {
-          projection: {
-            _id: 0,
-            studentId: 1,
-            studentName: 1,
-            answers: 1,
-            updatedAt: 1,
+          $group: {
+            _id: "$studentId",
+            studentId: { $first: "$studentId" },
+            studentName: { $first: "$studentName" },
+            answers: { $first: "$answers" },
+            updatedAt: { $first: "$updatedAt" },
           },
         },
-      )
-      .sort({ updatedAt: -1 })
+        {
+          $match: {
+            studentId: { $nin: ["", "anon", null] },
+            studentName: { $nin: ["", null] },
+          },
+        },
+        { $limit: 800 },
+      ])
       .toArray();
 
-    const byStudentId = new Map<
-      string,
-      { studentId: string; studentName: string; points: number; filledFields: number; updatedAt: any }
-    >();
-
-    for (const d of docs as any[]) {
-      const studentId = String(d?.studentId ?? "").trim();
-      const studentName = String(d?.studentName ?? "").trim();
-      if (!studentId) continue;
-      if (studentId === "anon") continue;
-      if (!studentName) continue;
-      const { points, filled } = scoreAnswers(d?.answers);
-      if (points <= 0) continue;
-
-      const current = byStudentId.get(studentId);
-      if (!current) {
-        byStudentId.set(studentId, {
+    const items = (docs as any[])
+      .map((d) => {
+        const studentId = String(d?.studentId ?? "").trim();
+        const studentName = String(d?.studentName ?? "").trim();
+        const { points, filled } = scoreAnswers(d?.answers);
+        return {
           studentId,
           studentName,
           points,
           filledFields: filled,
           updatedAt: d?.updatedAt ?? null,
-        });
-        continue;
-      }
-
-      const existingTime = current.updatedAt ? new Date(current.updatedAt).getTime() : 0;
-      const incomingTime = d?.updatedAt ? new Date(d.updatedAt).getTime() : 0;
-      if (incomingTime > existingTime) {
-        byStudentId.set(studentId, {
-          studentId,
-          studentName,
-          points,
-          filledFields: filled,
-          updatedAt: d?.updatedAt ?? null,
-        });
-      }
-    }
-
-    const items = Array.from(byStudentId.values())
+        };
+      })
+      .filter((d) => d.studentId && d.studentName && d.points > 0)
       .sort((a, b) => {
         if (b.points !== a.points) return b.points - a.points;
         const at = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
@@ -204,10 +189,13 @@ export async function GET(req: Request) {
     );
   }
 
-  const doc = await db.collection("lesson_responses").findOne({
-    lessonSlug,
-    studentId,
-  });
+  const doc = await db.collection("lesson_responses").findOne(
+    {
+      lessonSlug,
+      studentId,
+    },
+    { projection: { _id: 0 } },
+  );
 
   return NextResponse.json({ ok: true, storage: "mongo", data: doc ?? null });
 }

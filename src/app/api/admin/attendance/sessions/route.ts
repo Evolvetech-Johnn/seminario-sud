@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { getMongoDb } from "@/lib/mongodb";
+import { readTeacherFromSessionToken, TEACHER_SESSION_COOKIE } from "@/lib/teacherSession";
+import { requireSameOrigin, rateLimit } from "@/lib/server/security";
 
 function generateCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -20,11 +22,14 @@ function asString(value: unknown, maxLen: number) {
 }
 
 export async function GET(req: Request) {
-  const auth = (await cookies()).get("teacherAuth")?.value === "1";
+  const store = await cookies();
+  const auth = Boolean(readTeacherFromSessionToken(store.get(TEACHER_SESSION_COOKIE)?.value ?? ""));
   if (!auth) return NextResponse.json({ ok: false, error: "Não autorizado" }, { status: 401 });
 
   const url = new URL(req.url);
   const dateIso = asString(url.searchParams.get("date"), 20);
+  const limitParsed = Number(url.searchParams.get("limit"));
+  const limit = Number.isFinite(limitParsed) && limitParsed > 0 ? Math.min(60, Math.floor(limitParsed)) : 20;
 
   const db = await getMongoDb();
   if (!db) return NextResponse.json({ ok: false, error: "MongoDB não configurado" }, { status: 500 });
@@ -36,23 +41,38 @@ export async function GET(req: Request) {
     .collection("attendance_sessions")
     .find(query, { projection: { _id: 0 } })
     .sort({ createdAt: -1 })
+    .limit(limit)
     .toArray();
 
   const sessionIds = sessions.map((s: any) => String(s.id));
-  const records = sessionIds.length
-    ? await db
-        .collection("attendance_records")
-        .find({ sessionId: { $in: sessionIds } }, { projection: { _id: 0, sessionId: 1, present: 1 } })
-        .toArray()
-    : [];
-
   const counts = new Map<string, { total: number; present: number }>();
-  for (const r of records as any[]) {
-    const key = String(r.sessionId);
-    const current = counts.get(key) ?? { total: 0, present: 0 };
-    current.total += 1;
-    if (Boolean(r.present)) current.present += 1;
-    counts.set(key, current);
+  if (sessionIds.length) {
+    const agg = await db
+      .collection("attendance_records")
+      .aggregate([
+        { $match: { sessionId: { $in: sessionIds } } },
+        {
+          $group: {
+            _id: "$sessionId",
+            total: { $sum: 1 },
+            present: {
+              $sum: {
+                $cond: ["$present", 1, 0],
+              },
+            },
+          },
+        },
+      ])
+      .toArray();
+
+    for (const row of agg as any[]) {
+      const id = String(row?._id ?? "");
+      if (!id) continue;
+      counts.set(id, {
+        total: Number(row?.total ?? 0),
+        present: Number(row?.present ?? 0),
+      });
+    }
   }
 
   const items = (sessions as any[]).map((s) => {
@@ -72,7 +92,18 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = (await cookies()).get("teacherAuth")?.value === "1";
+  const sameOrigin = requireSameOrigin(req);
+  if (!sameOrigin.ok) return NextResponse.json({ ok: false, error: sameOrigin.error }, { status: 403 });
+  const rl = rateLimit(req, "admin_attendance_create", { windowMs: 60_000, max: 12 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Muitas requisições. Tente novamente em instantes." },
+      { status: 429, headers: { "retry-after": String(rl.retryAfterSeconds) } },
+    );
+  }
+
+  const store = await cookies();
+  const auth = Boolean(readTeacherFromSessionToken(store.get(TEACHER_SESSION_COOKIE)?.value ?? ""));
   if (!auth) return NextResponse.json({ ok: false, error: "Não autorizado" }, { status: 401 });
 
   const db = await getMongoDb();
@@ -84,7 +115,7 @@ export async function POST(req: Request) {
 
   const students = await db
     .collection("students")
-    .find({}, { projection: { _id: 0 } })
+    .find({}, { projection: { _id: 0, id: 1, name: 1, email: 1 } })
     .sort({ name: 1 })
     .toArray();
 
@@ -116,4 +147,3 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true, data: { session, records } }, { status: 201 });
 }
-

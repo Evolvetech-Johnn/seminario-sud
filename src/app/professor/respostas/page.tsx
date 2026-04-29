@@ -3,14 +3,25 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { AppHeader } from "@/components/seminario/AppHeader";
 import { getMongoDb } from "@/lib/mongodb";
+import { readTeacherFromSessionToken, TEACHER_SESSION_COOKIE } from "@/lib/teacherSession";
 
 export const dynamic = "force-dynamic";
 
-export default async function TeacherResponsesPage() {
-  const isAuthed = (await cookies()).get("teacherAuth")?.value === "1";
+type Props = {
+  searchParams?: {
+    limit?: string;
+  };
+};
+
+export default async function TeacherResponsesPage({ searchParams }: Props) {
+  const store = await cookies();
+  const isAuthed = Boolean(readTeacherFromSessionToken(store.get(TEACHER_SESSION_COOKIE)?.value ?? ""));
   if (!isAuthed) {
     redirect("/professor/login?next=/professor/respostas");
   }
+
+  const limitParsed = Number(searchParams?.limit);
+  const limit = Number.isFinite(limitParsed) && limitParsed > 0 ? Math.min(500, Math.floor(limitParsed)) : 200;
 
   const db = await getMongoDb();
   const docs =
@@ -19,6 +30,7 @@ export default async function TeacherResponsesPage() {
           .collection("lesson_responses")
           .find({}, { projection: { _id: 0 } })
           .sort({ updatedAt: -1 })
+          .limit(limit)
           .toArray()
       : [];
 
@@ -35,7 +47,7 @@ export default async function TeacherResponsesPage() {
               Respostas dos alunos
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              Total: {docs?.length ?? 0}
+              Mostrando: {docs?.length ?? 0}
             </p>
           </div>
           <div className="flex items-center gap-2">

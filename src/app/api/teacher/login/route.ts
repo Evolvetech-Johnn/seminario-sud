@@ -1,7 +1,10 @@
-import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { getMongoDb, getMongoDiagnostics } from "@/lib/mongodb";
+import { createTeacherSessionToken } from "@/lib/teacherSession";
+import { signJwt } from "@/lib/teacherJwt";
+import crypto from "node:crypto";
+import { rateLimit } from "@/lib/server/security";
 
 type Body = {
   username?: unknown;
@@ -16,37 +19,11 @@ function asString(value: unknown, maxLen: number) {
   return value.slice(0, maxLen);
 }
 
-function base64UrlEncode(input: string | Buffer) {
-  const buf = typeof input === "string" ? Buffer.from(input) : input;
-  return buf
-    .toString("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-}
-
-function base64UrlDecodeToBuffer(input: string) {
-  const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
-  const pad = normalized.length % 4 === 0 ? "" : "=".repeat(4 - (normalized.length % 4));
-  return Buffer.from(`${normalized}${pad}`, "base64");
-}
-
 function getJwtSecret() {
   const secret = process.env.TEACHER_JWT_SECRET || process.env.JWT_SECRET;
   if (secret) return secret;
   if (process.env.NODE_ENV !== "production") return "dev-teacher-jwt-secret";
   return "";
-}
-
-function signJwt(payload: Record<string, unknown>, secret: string, expiresInSeconds: number) {
-  const header = { alg: "HS256", typ: "JWT" };
-  const now = Math.floor(Date.now() / 1000);
-  const fullPayload = { ...payload, iat: now, exp: now + expiresInSeconds };
-  const encodedHeader = base64UrlEncode(JSON.stringify(header));
-  const encodedPayload = base64UrlEncode(JSON.stringify(fullPayload));
-  const data = `${encodedHeader}.${encodedPayload}`;
-  const sig = crypto.createHmac("sha256", secret).update(data).digest();
-  return `${data}.${base64UrlEncode(sig)}`;
 }
 
 function corsHeaders() {
@@ -100,6 +77,14 @@ function mapMongoErrorToMessage(err: unknown) {
 }
 
 export async function POST(req: Request) {
+  const rl = rateLimit(req, "teacher_login", { windowMs: 60_000, max: 30 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Muitas tentativas. Tente novamente em instantes." },
+      { status: 429, headers: { ...corsHeaders(), "retry-after": String(rl.retryAfterSeconds) } },
+    );
+  }
+
   try {
     const body = (await req.json().catch(() => null)) as Body | null;
     const username = normalizeUsername(asString(body?.username, 80));
@@ -136,7 +121,29 @@ export async function POST(req: Request) {
             );
           }
           const token = signJwt({ teacher }, secret, 60 * 60 * 8);
-          return NextResponse.json({ token, teacher }, { status: 200, headers });
+          const res = NextResponse.json({ token, teacher }, { status: 200, headers });
+          const sessionToken = createTeacherSessionToken(teacher, 60 * 60 * 8);
+          if (sessionToken) {
+            res.cookies.set({
+              name: "teacherSession",
+              value: sessionToken,
+              httpOnly: true,
+              sameSite: "lax",
+              secure: process.env.NODE_ENV === "production",
+              path: "/",
+              maxAge: 60 * 60 * 8,
+            });
+          }
+          res.cookies.set({
+            name: "teacherAuth",
+            value: "",
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 0,
+          });
+          return res;
         }
 
         return NextResponse.json(
@@ -198,14 +205,27 @@ export async function POST(req: Request) {
 
       const token = signJwt({ teacher }, secret, 60 * 60 * 8);
       const res = NextResponse.json({ token, teacher }, { status: 200, headers });
+      const sessionToken = createTeacherSessionToken(teacher, 60 * 60 * 8);
+      if (!sessionToken) {
+        return NextResponse.json({ error: "JWT_SECRET não configurado" }, { status: 500, headers });
+      }
       res.cookies.set({
-        name: "teacherAuth",
-        value: "1",
+        name: "teacherSession",
+        value: sessionToken,
         httpOnly: true,
         sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
         path: "/",
         maxAge: 60 * 60 * 8,
+      });
+      res.cookies.set({
+        name: "teacherAuth",
+        value: "",
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 0,
       });
       return res;
     }
@@ -299,15 +319,33 @@ export async function POST(req: Request) {
       await authCol.updateOne({ username: "johnathan" }, { $set: { updatedAt: now } });
     }
 
+    const teacher = {
+      id: "teacher:johnathan",
+      name: "Professor",
+      email: "johnathan",
+    };
     const res = NextResponse.json({ ok: true }, { headers });
+    const sessionToken = createTeacherSessionToken(teacher, 60 * 60 * 8);
+    if (!sessionToken) {
+      return NextResponse.json({ ok: false, error: "JWT_SECRET não configurado" }, { status: 500, headers });
+    }
     res.cookies.set({
-      name: "teacherAuth",
-      value: "1",
+      name: "teacherSession",
+      value: sessionToken,
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: 60 * 60 * 8,
+    });
+    res.cookies.set({
+      name: "teacherAuth",
+      value: "",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 0,
     });
     return res;
   } catch (err) {

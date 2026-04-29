@@ -3,9 +3,11 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { getMongoDb } from "@/lib/mongodb";
+import { readTeacherFromSessionToken, TEACHER_SESSION_COOKIE } from "@/lib/teacherSession";
+import { requireSameOrigin, rateLimit } from "@/lib/server/security";
 
 function requireTeacherAuth() {
-  return cookies().then((c) => c.get("teacherAuth")?.value === "1");
+  return cookies().then((c) => Boolean(readTeacherFromSessionToken(c.get(TEACHER_SESSION_COOKIE)?.value ?? "")));
 }
 
 function asString(value: unknown, maxLen: number) {
@@ -40,6 +42,16 @@ function generateTempPassword() {
 }
 
 export async function POST(req: Request) {
+  const sameOrigin = requireSameOrigin(req);
+  if (!sameOrigin.ok) return NextResponse.json({ ok: false, error: sameOrigin.error }, { status: 403 });
+  const rl = rateLimit(req, "admin_teacher_create", { windowMs: 60_000, max: 10 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Muitas requisições. Tente novamente em instantes." },
+      { status: 429, headers: { "retry-after": String(rl.retryAfterSeconds) } },
+    );
+  }
+
   const auth = await requireTeacherAuth();
   if (!auth) return NextResponse.json({ ok: false, error: "Não autorizado" }, { status: 401 });
 
@@ -88,4 +100,3 @@ export async function POST(req: Request) {
     { status: 201 },
   );
 }
-

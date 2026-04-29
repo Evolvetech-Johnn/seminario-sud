@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
 
 import { LGPD_CONSENT_COOKIE, parseLgpdConsentCookie } from "@/lib/lgpd";
+import { requireSameOrigin, rateLimit } from "@/lib/server/security";
 
 export async function POST(req: Request) {
+  const sameOrigin = requireSameOrigin(req);
+  if (!sameOrigin.ok) return NextResponse.json({ ok: false, error: sameOrigin.error }, { status: 403 });
+  const rl = rateLimit(req, "lgpd_consent", { windowMs: 60_000, max: 30 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Muitas requisições. Tente novamente em instantes." },
+      { status: 429, headers: { "retry-after": String(rl.retryAfterSeconds) } },
+    );
+  }
+
   const body = (await req.json().catch(() => null)) as any;
   const value = parseLgpdConsentCookie(body?.value);
   if (!value) return NextResponse.json({ ok: false, error: "Valor inválido" }, { status: 400 });
@@ -42,4 +53,3 @@ export async function POST(req: Request) {
 
   return res;
 }
-

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { createTeacherSessionToken } from "@/lib/teacherSession";
+
 function safeNextUrl(value: string | null) {
   if (!value) return "/admin/dashboard";
   if (!value.startsWith("/")) return "/admin/dashboard";
@@ -18,15 +20,33 @@ export async function GET(req: Request) {
     );
   }
 
+  const teacher = {
+    id: "teacher:autologin",
+    name: process.env.TEACHER_NAME ?? "Professor",
+    email: process.env.TEACHER_EMAIL?.trim().toLowerCase() ?? "autologin",
+  };
+  const token = createTeacherSessionToken(teacher, 60 * 60 * 8);
+  if (!token) {
+    return NextResponse.redirect(new URL(`/professor/login?next=${encodeURIComponent(nextUrl)}`, url.origin));
+  }
   const res = NextResponse.redirect(new URL(nextUrl, url.origin));
   res.cookies.set({
-    name: "teacherAuth",
-    value: "1",
+    name: "teacherSession",
+    value: token,
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 8,
+  });
+  res.cookies.set({
+    name: "teacherAuth",
+    value: "",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
   });
   return res;
 }

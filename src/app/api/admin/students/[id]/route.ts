@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { getMongoDb } from "@/lib/mongodb";
+import { readTeacherFromSessionToken, TEACHER_SESSION_COOKIE } from "@/lib/teacherSession";
+import { requireSameOrigin, rateLimit } from "@/lib/server/security";
 
 function asString(value: unknown, maxLen: number) {
   if (typeof value !== "string") return "";
@@ -9,7 +11,18 @@ function asString(value: unknown, maxLen: number) {
 }
 
 export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
-  const auth = (await cookies()).get("teacherAuth")?.value === "1";
+  const sameOrigin = requireSameOrigin(req);
+  if (!sameOrigin.ok) return NextResponse.json({ ok: false, error: sameOrigin.error }, { status: 403 });
+  const rl = rateLimit(req, "admin_student_update", { windowMs: 60_000, max: 60 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Muitas requisições. Tente novamente em instantes." },
+      { status: 429, headers: { "retry-after": String(rl.retryAfterSeconds) } },
+    );
+  }
+
+  const store = await cookies();
+  const auth = Boolean(readTeacherFromSessionToken(store.get(TEACHER_SESSION_COOKIE)?.value ?? ""));
   if (!auth) return NextResponse.json({ ok: false, error: "Não autorizado" }, { status: 401 });
 
   const { id } = await context.params;
@@ -50,4 +63,3 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 
   return NextResponse.json({ ok: true, data: doc });
 }
-
