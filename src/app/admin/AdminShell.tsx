@@ -70,6 +70,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               Alunos
             </Link>
             <Link
+              href="/admin/teachers"
+              className={cn(
+                "rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100",
+                pathname?.startsWith("/admin/teachers") && "bg-slate-100 text-slate-900",
+              )}
+            >
+              Professores
+            </Link>
+            <Link
               href="/professor/respostas"
               className={cn(
                 "rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100",

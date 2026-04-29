@@ -1,10 +1,11 @@
-import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import crypto from "node:crypto";
 
 import { getMongoDb } from "@/lib/mongodb";
 import { getTeacherSession } from "@/lib/server/teacherAuth";
 import { requireSameOrigin, rateLimit } from "@/lib/server/security";
+import { createPasswordHash, generateTempPassword } from "@/lib/password";
 
 function requireTeacherAuth() {
   return cookies().then(async () => Boolean(await getTeacherSession()));
@@ -17,11 +18,6 @@ function asString(value: unknown, maxLen: number) {
 
 function normalizeEmail(raw: string) {
   return raw.trim().toLowerCase();
-}
-
-function hashPassword(password: string, salt: string) {
-  const buf = crypto.scryptSync(password, salt, 64);
-  return buf.toString("base64");
 }
 
 function slugifyName(name: string) {
@@ -37,8 +33,25 @@ function slugifyName(name: string) {
   return normalized || "professor";
 }
 
-function generateTempPassword() {
-  return crypto.randomBytes(9).toString("base64url");
+export async function GET(req: Request) {
+  const auth = await requireTeacherAuth();
+  if (!auth) return NextResponse.json({ ok: false, error: "Não autorizado" }, { status: 401 });
+
+  const db = await getMongoDb();
+  if (!db) return NextResponse.json({ ok: false, error: "MongoDB não configurado" }, { status: 500 });
+
+  const url = new URL(req.url);
+  const limitParsed = Number(url.searchParams.get("limit"));
+  const limit = Number.isFinite(limitParsed) && limitParsed > 0 ? Math.min(500, Math.floor(limitParsed)) : 200;
+
+  const docs = await db
+    .collection("teacher_auth")
+    .find({}, { projection: { _id: 0, email: 1, name: 1, createdAt: 1, updatedAt: 1, id: 1 } })
+    .sort({ updatedAt: -1 })
+    .limit(limit)
+    .toArray();
+
+  return NextResponse.json({ ok: true, data: docs });
 }
 
 export async function POST(req: Request) {
@@ -75,11 +88,11 @@ export async function POST(req: Request) {
   if (existing) return NextResponse.json({ ok: false, error: "Email já existe" }, { status: 409 });
 
   const password = generateTempPassword();
-  const salt = crypto.randomBytes(16).toString("base64");
-  const hash = hashPassword(password, salt);
+  const { salt, hash } = createPasswordHash(password);
   const now = new Date();
 
   await authCol.insertOne({
+    id: `teacher:${crypto.randomUUID()}`,
     email,
     name,
     salt,
