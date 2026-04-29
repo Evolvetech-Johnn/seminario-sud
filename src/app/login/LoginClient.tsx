@@ -12,7 +12,7 @@ import { useStudentSession } from "@/hooks/useStudentSession";
 export function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { session, isHydrated, login } = useStudentSession();
+  const { session, isHydrated, setSession } = useStudentSession();
 
   const nextUrl = useMemo(() => {
     const raw = searchParams.get("next");
@@ -21,10 +21,11 @@ export function LoginClient() {
     return raw;
   }, [searchParams]);
 
-  const [name, setName] = useState("");
-  const [code, setCode] = useState("");
+  const [login, setLogin] = useState("");
+  const [password, setPassword] = useState("");
   const [showCode, setShowCode] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isHydrated && session) {
@@ -61,21 +62,21 @@ export function LoginClient() {
               </h1>
               <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
                 As respostas ficam separadas por aluno. Para entrar no ranking, use login e senha
-                (obrigatórios) para manter sua identificação consistente.
+                (fornecidos pelo professor) para manter sua identificação consistente.
               </p>
             </div>
 
             <div className="px-6 py-6 sm:px-10 sm:py-8">
               <div className="grid gap-4">
                 <label className="block">
-                  <div className="text-sm font-semibold text-slate-900">Login</div>
+                  <div className="text-sm font-semibold text-slate-900">Usuário</div>
                   <input
-                    value={name}
+                    value={login}
                     onChange={(e) => {
-                      setName(e.target.value);
+                      setLogin(e.target.value);
                       if (error) setError(null);
                     }}
-                    placeholder="Ex: João Pedro"
+                    placeholder="Ex: joao.silva"
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sud-blue/60 focus:ring-4 focus:ring-sud-blue/15"
                   />
                 </label>
@@ -93,12 +94,12 @@ export function LoginClient() {
                   </div>
                   <input
                     type={showCode ? "text" : "password"}
-                    value={code}
+                    value={password}
                     onChange={(e) => {
-                      setCode(e.target.value);
+                      setPassword(e.target.value);
                       if (error) setError(null);
                     }}
-                    placeholder="Mínimo 4 caracteres"
+                    placeholder="Senha fornecida pelo professor"
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sud-blue/60 focus:ring-4 focus:ring-sud-blue/15"
                   />
                 </div>
@@ -116,17 +117,45 @@ export function LoginClient() {
                 <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
                   <button
                     type="button"
+                    disabled={isSubmitting}
                     onClick={() => {
-                      const result = login(name, code);
-                      if (!result.ok) {
-                        setError(result.error ?? "Não foi possível entrar");
-                        return;
-                      }
-                      router.replace(nextUrl);
+                      (async () => {
+                        if (isSubmitting) return;
+                        setIsSubmitting(true);
+                        try {
+                          const res = await fetch("/api/student/login", {
+                            method: "POST",
+                            headers: { "content-type": "application/json" },
+                            body: JSON.stringify({ login, password }),
+                          });
+                          const json = (await res.json().catch(() => null)) as any;
+                          if (!res.ok || json?.ok !== true) {
+                            setError(json?.error ?? "Não foi possível entrar");
+                            return;
+                          }
+                          const student = json?.data?.student;
+                          if (!student?.id || !student?.name) {
+                            setError("Não foi possível entrar");
+                            return;
+                          }
+                          setSession({
+                            id: String(student.id),
+                            name: String(student.name),
+                            login: student.login ? String(student.login) : undefined,
+                            email: student.email ? String(student.email) : null,
+                            createdAt: new Date().toISOString(),
+                          });
+                          router.replace(nextUrl);
+                        } catch {
+                          setError("Falha de rede. Tente novamente.");
+                        } finally {
+                          setIsSubmitting(false);
+                        }
+                      })();
                     }}
                     className="inline-flex w-full items-center justify-center rounded-2xl bg-sud-blue px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25 sm:w-auto"
                   >
-                    Entrar
+                    {isSubmitting ? "Entrando..." : "Entrar"}
                   </button>
                 </div>
               </div>

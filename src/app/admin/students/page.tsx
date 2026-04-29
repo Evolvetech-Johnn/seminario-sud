@@ -10,18 +10,22 @@ export default function AdminStudentsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [draftEmail, setDraftEmail] = useState("");
+  const [draftLogin, setDraftLogin] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [createRole, setCreateRole] = useState<"student" | "teacher">("student");
   const [createName, setCreateName] = useState("");
   const [createTeacherEmail, setCreateTeacherEmail] = useState("");
+  const [createStudentLogin, setCreateStudentLogin] = useState("");
   const [createPending, setCreatePending] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [resetPasswordMsg, setResetPasswordMsg] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<
     | null
     | {
         role: "student" | "teacher";
         name: string;
         email?: string;
+        login?: string;
         tempPassword?: string;
       }
   >(null);
@@ -33,7 +37,7 @@ export default function AdminStudentsPage() {
     const list = students.data?.data ?? [];
     const q = query.trim().toLowerCase();
     if (!q) return list;
-    return list.filter((u) => `${u.name} ${u.email ?? ""}`.toLowerCase().includes(q));
+    return list.filter((u) => `${u.name} ${u.login ?? ""} ${u.email ?? ""}`.toLowerCase().includes(q));
   }, [students.data?.data, query]);
 
   return (
@@ -51,6 +55,7 @@ export default function AdminStudentsPage() {
             setCreateRole("student");
             setCreateName("");
             setCreateTeacherEmail("");
+            setCreateStudentLogin("");
             setCreateOpen(true);
           }}
           className="rounded-xl bg-sud-navy px-4 py-2 text-sm font-bold text-white transition hover:bg-sud-navy/90"
@@ -125,6 +130,21 @@ export default function AdminStudentsPage() {
                 </label>
               ) : null}
 
+              {createRole === "student" ? (
+                <label className="grid gap-2">
+                  <div className="text-sm font-semibold text-slate-800">Usuário (opcional)</div>
+                  <input
+                    value={createStudentLogin}
+                    onChange={(e) => setCreateStudentLogin(e.target.value)}
+                    placeholder="Ex: joao.silva"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:border-slate-300"
+                  />
+                  <div className="text-xs font-semibold text-slate-500">
+                    Se você deixar vazio, o sistema vai gerar um usuário e uma senha temporária.
+                  </div>
+                </label>
+              ) : null}
+
               {createError ? (
                 <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
                   {createError}
@@ -134,7 +154,13 @@ export default function AdminStudentsPage() {
               {createSuccess ? (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">
                   {createSuccess.role === "student" ? (
-                    <div>Aluno criado: {createSuccess.name}</div>
+                    <div className="grid gap-2">
+                      <div>Aluno criado: {createSuccess.name}</div>
+                      {createSuccess.login ? <div>Usuário: {createSuccess.login}</div> : null}
+                      {createSuccess.tempPassword ? (
+                        <div>Senha temporária: {createSuccess.tempPassword}</div>
+                      ) : null}
+                    </div>
                   ) : (
                     <div className="grid gap-2">
                       <div>Professor criado: {createSuccess.name}</div>
@@ -174,11 +200,16 @@ export default function AdminStudentsPage() {
                       const res = await fetch("/api/admin/students", {
                         method: "POST",
                         headers: { "content-type": "application/json" },
-                        body: JSON.stringify({ name }),
+                        body: JSON.stringify({ name, login: createStudentLogin.trim() || undefined }),
                       });
                       const json = (await res.json().catch(() => null)) as any;
                       if (!res.ok) throw new Error(json?.error ?? "Erro ao criar aluno");
-                      setCreateSuccess({ role: "student", name });
+                      setCreateSuccess({
+                        role: "student",
+                        name: json?.data?.name ?? name,
+                        login: json?.data?.login,
+                        tempPassword: json?.data?.tempPassword,
+                      });
                       await students.refetch().catch(() => null);
                       return;
                     }
@@ -223,14 +254,15 @@ export default function AdminStudentsPage() {
           name="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por nome ou email…"
+          placeholder="Buscar por nome, usuário ou email…"
           className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:border-slate-300"
         />
       </div>
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <div className="grid grid-cols-[1fr_220px_160px] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-600">
+        <div className="grid grid-cols-[1fr_220px_220px_160px] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-600">
           <div>Aluno</div>
+          <div>Usuário</div>
           <div>Email</div>
           <div>Ações</div>
         </div>
@@ -241,10 +273,13 @@ export default function AdminStudentsPage() {
         {items.map((u) => {
           const isEditing = editingId === u.id;
           return (
-            <div key={u.id} className="grid grid-cols-[1fr_220px_160px] gap-4 border-b border-slate-100 px-4 py-4">
+            <div key={u.id} className="grid grid-cols-[1fr_220px_220px_160px] gap-4 border-b border-slate-100 px-4 py-4">
               <div className="min-w-0">
                 <div className="truncate text-sm font-bold text-slate-900">{u.name}</div>
                 <div className="mt-1 text-xs font-semibold text-slate-500">ID: {u.id}</div>
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-slate-800">{u.login ?? "—"}</div>
               </div>
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold text-slate-700">{u.email ?? "—"}</div>
@@ -256,6 +291,8 @@ export default function AdminStudentsPage() {
                     setEditingId(u.id);
                     setDraftName(u.name);
                     setDraftEmail(u.email ?? "");
+                    setDraftLogin(u.login ?? "");
+                    setResetPasswordMsg(null);
                   }}
                   className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 transition hover:bg-slate-50"
                 >
@@ -264,13 +301,21 @@ export default function AdminStudentsPage() {
               </div>
 
               {isEditing ? (
-                <div className="col-span-3 mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
+                <div className="col-span-4 mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="grid gap-4 sm:grid-cols-3">
                     <div className="grid gap-2">
                       <label className="text-sm font-semibold text-slate-700">Nome</label>
                       <input
                         value={draftName}
                         onChange={(e) => setDraftName(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:border-slate-300"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <label className="text-sm font-semibold text-slate-700">Usuário</label>
+                      <input
+                        value={draftLogin}
+                        onChange={(e) => setDraftLogin(e.target.value)}
                         className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:border-slate-300"
                       />
                     </div>
@@ -284,7 +329,41 @@ export default function AdminStudentsPage() {
                     </div>
                   </div>
 
+                  {resetPasswordMsg ? (
+                    <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">
+                      {resetPasswordMsg}
+                    </div>
+                  ) : null}
+
                   <div className="mt-4 flex flex-wrap justify-end gap-2">
+                    <button
+                      type="button"
+                      disabled={update.isPending}
+                      onClick={async () => {
+                        setCreateError(null);
+                        setResetPasswordMsg(null);
+                        try {
+                          const res = await fetch(
+                            `/api/admin/students/${encodeURIComponent(u.id)}/reset-password`,
+                            { method: "POST" },
+                          );
+                          const json = (await res.json().catch(() => null)) as any;
+                          if (!res.ok) throw new Error(json?.error ?? "Erro ao resetar senha");
+                          const pwd = json?.data?.tempPassword;
+                          const login = json?.data?.login;
+                          setResetPasswordMsg(
+                            `Senha temporária gerada${login ? ` para ${login}` : ""}: ${pwd}`,
+                          );
+                        } catch (err) {
+                          setCreateError(err instanceof Error ? err.message : "Erro ao resetar senha");
+                        }
+                      }}
+                      className={cn(
+                        "rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60",
+                      )}
+                    >
+                      Resetar senha
+                    </button>
                     <button
                       type="button"
                       onClick={() => setEditingId(null)}
@@ -301,6 +380,7 @@ export default function AdminStudentsPage() {
                             id: u.id,
                             name: draftName,
                             email: draftEmail,
+                            login: draftLogin,
                           })
                           .catch(() => null);
                         setEditingId(null);

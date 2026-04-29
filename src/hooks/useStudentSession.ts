@@ -32,6 +32,13 @@ export function useStudentSession() {
     [storage],
   );
 
+  const setSession = useCallback(
+    (session: StudentSession | null) => {
+      storage.setState(session);
+    },
+    [storage],
+  );
+
   const logout = useCallback(() => {
     storage.setState(null);
   }, [storage]);
@@ -40,6 +47,7 @@ export function useStudentSession() {
     session: storage.state,
     isHydrated: storage.isHydrated,
     login,
+    setSession,
     logout,
   } as const;
 }

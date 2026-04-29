@@ -35,6 +35,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
   const body = (await req.json().catch(() => null)) as any;
   const name = body?.name === undefined ? undefined : asString(body?.name, 120);
   const email = body?.email === undefined ? undefined : asString(body?.email, 180) || null;
+  const login = body?.login === undefined ? undefined : asString(body?.login, 80).toLowerCase();
 
   if (name !== undefined && name.length < 2) {
     return NextResponse.json({ ok: false, error: "Nome inválido" }, { status: 400 });
@@ -48,9 +49,18 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     if (existing) return NextResponse.json({ ok: false, error: "Email já existe" }, { status: 409 });
   }
 
+  if (login) {
+    const existingLogin = await db.collection("students").findOne(
+      { login, id: { $ne: studentId } },
+      { projection: { _id: 0, id: 1 } },
+    );
+    if (existingLogin) return NextResponse.json({ ok: false, error: "Usuário já existe" }, { status: 409 });
+  }
+
   const update: Record<string, unknown> = { updatedAt: new Date().toISOString() };
   if (name !== undefined) update.name = name;
   if (email !== undefined) update.email = email;
+  if (login !== undefined) update.login = login;
 
   const res = await db.collection("students").findOneAndUpdate(
     { id: studentId },
@@ -61,5 +71,14 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
   const doc = res?.value ?? null;
   if (!doc) return NextResponse.json({ ok: false, error: "Não encontrado" }, { status: 404 });
 
-  return NextResponse.json({ ok: true, data: doc });
+  const sanitized = {
+    id: doc.id,
+    name: doc.name,
+    email: doc.email ?? null,
+    login: doc.login ?? null,
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+  };
+
+  return NextResponse.json({ ok: true, data: sanitized });
 }

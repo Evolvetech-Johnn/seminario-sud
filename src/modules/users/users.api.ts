@@ -4,6 +4,7 @@ export type StudentDto = {
   id: string;
   name: string;
   email?: string | null;
+  login?: string | null;
   createdAt: string;
   updatedAt?: string;
 };
@@ -30,11 +31,12 @@ export function useUpdateStudent() {
       id: string;
       name?: string;
       email?: string;
+      login?: string;
     }) =>
       adminFetch<{ ok: true; data: StudentDto }>(`/api/admin/students/${encodeURIComponent(input.id)}`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: input.name, email: input.email }),
+        body: JSON.stringify({ name: input.name, email: input.email, login: input.login }),
       }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["admin", "students"] });
