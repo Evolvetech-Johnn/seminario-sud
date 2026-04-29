@@ -1,41 +1,25 @@
-import Image from "next/image";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
-import { getAulaBySlug } from "@/modules/aulas/aulas.service";
+import { LessonTemplateLessonClient } from "@/features/lessons/LessonDocLessonClient";
+import { getLessonMetaBySlug } from "@/features/lessons/lessonMetas";
+import { getLessonBySlug } from "@/features/lessons/lessonRegistry";
 
-type Props = {
-  params: Promise<{ slug: string }>;
-};
+type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const lessonMeta = getLessonMetaBySlug(slug);
+  if (!lessonMeta) return { title: "Seminário SUD — Aula não encontrada" };
+  return {
+    title: `Seminário SUD — ${lessonMeta.title}`,
+    description: lessonMeta.subtitle,
+  };
+}
 
 export default async function AulaPage({ params }: Props) {
   const { slug } = await params;
-  const aula = await getAulaBySlug(slug);
-
-  if (!aula) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-12">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Aula não encontrada
-        </h1>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-12">
-      <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-        {aula.title}
-      </h1>
-      <p className="mt-2 text-slate-600">{aula.description}</p>
-      <div className="relative mt-6 aspect-[16/9] overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
-        <Image
-          src={aula.image}
-          alt={aula.title}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 768px"
-        />
-      </div>
-    </div>
-  );
+  const lesson = (await getLessonBySlug(slug)) ?? null;
+  if (!lesson) notFound();
+  return <LessonTemplateLessonClient lesson={lesson} />;
 }
-

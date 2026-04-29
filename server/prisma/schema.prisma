@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+enum UserRole {
+  admin
+  teacher
+  student
+}
+
+enum MediaType {
+  image
+  thumbnail
+}
+
+model User {
+  id           String         @id @default(cuid())
+  name         String
+  email        String         @unique
+  passwordHash String
+  role         UserRole       @default(student)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  progress      Progress[]
+  refreshTokens RefreshToken[]
+  attendanceRecords AttendanceRecord[]
+  createdAttendanceSessions AttendanceSession[] @relation("AttendanceSessionCreatedBy")
+}
+
+model Lesson {
+  id           String     @id @default(cuid())
+  lessonNumber Int        @unique
+  slug         String     @unique
+  title        String
+  subtitle     String
+  date         DateTime?
+  reference    String?
+  content      Json
+  published    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  media    Media[]
+  progress Progress[]
+  attendanceSessions AttendanceSession[]
+}
+
+model Media {
+  id        String    @id @default(cuid())
+  lessonId  String?
+  url       String
+  publicId  String
+  type      MediaType
+  createdAt DateTime  @default(now())
+
+  lesson Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+}
+
+model Progress {
+  userId    String
+  lessonId  String
+  completed Boolean   @default(false)
+  updatedAt DateTime  @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@id([userId, lessonId])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String
+  revoked   Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AttendanceSession {
+  id          String   @id @default(cuid())
+  date        DateTime
+  lessonId    String?
+  createdById String
+  createdAt   DateTime @default(now())
+
+  lesson  Lesson?            @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  createdBy User             @relation("AttendanceSessionCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  records AttendanceRecord[]
+
+  @@index([date])
+  @@index([lessonId])
+}
+
+model AttendanceRecord {
+  id          String   @id @default(cuid())
+  sessionId   String
+  studentId   String
+  code        String
+  present     Boolean  @default(false)
+  confirmedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  session AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+  @@index([studentId])
+}

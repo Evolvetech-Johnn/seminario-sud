@@ -6,6 +6,7 @@ type LessonResponsesPayload = {
   lessonSlug?: unknown;
   studentId?: unknown;
   studentName?: unknown;
+  completed?: unknown;
   answers?: {
     icebreaker?: unknown;
     discussionNotes?: unknown;
@@ -23,6 +24,11 @@ function asLimitedString(value: unknown, maxLen: number): string {
 function normalizeText(value: unknown) {
   if (typeof value !== "string") return "";
   return value.trim();
+}
+
+function asBoolean(value: unknown) {
+  if (typeof value === "boolean") return value;
+  return null;
 }
 
 function scoreAnswers(answers: LessonResponsesPayload["answers"]) {
@@ -62,16 +68,60 @@ export async function GET(req: Request) {
   const view = url.searchParams.get("view");
   const limitRaw = url.searchParams.get("limit");
 
-  if (!lessonSlug) {
-    return NextResponse.json({ ok: false, error: "lessonSlug obrigatório" }, { status: 400 });
-  }
-
   const db = await getMongoDb();
   if (!db) {
     if (!studentId && view === "ranking") {
       return NextResponse.json({ ok: true, storage: "local", data: { items: [] } });
     }
+    if (studentId && view === "studentSummary") {
+      return NextResponse.json({ ok: true, storage: "local", data: { items: [] } });
+    }
     return NextResponse.json({ ok: true, storage: "local", data: null });
+  }
+
+  if (!lessonSlug && view === "studentSummary") {
+    if (!studentId) {
+      return NextResponse.json({ ok: false, error: "studentId obrigatório" }, { status: 400 });
+    }
+
+    const docs = await db
+      .collection("lesson_responses")
+      .find(
+        { studentId },
+        {
+          projection: {
+            _id: 0,
+            lessonSlug: 1,
+            answers: 1,
+            updatedAt: 1,
+            completed: 1,
+          },
+        },
+      )
+      .sort({ updatedAt: -1 })
+      .toArray();
+
+    const items = (docs as any[]).map((d) => {
+      const lessonSlug = String(d?.lessonSlug ?? "").trim();
+      const answers = d?.answers ?? {};
+      const { points, filled } = scoreAnswers(answers);
+      const hasReflection = Boolean(normalizeText(answers?.discussionNotes));
+      const completed = typeof d?.completed === "boolean" ? Boolean(d.completed) : filled === 5;
+      return {
+        lessonSlug,
+        points,
+        filledFields: filled,
+        hasReflection,
+        completed,
+        updatedAt: d?.updatedAt ?? null,
+      };
+    });
+
+    return NextResponse.json({ ok: true, storage: "mongo", data: { items } });
+  }
+
+  if (!lessonSlug) {
+    return NextResponse.json({ ok: false, error: "lessonSlug obrigatório" }, { status: 400 });
   }
 
   if (!studentId && view === "ranking") {
@@ -168,6 +218,7 @@ export async function POST(req: Request) {
     body && typeof body.lessonSlug === "string" ? body.lessonSlug : null;
   const studentId = asLimitedString(body?.studentId, 120) || null;
   const studentName = asLimitedString(body?.studentName, 120) || null;
+  const completed = asBoolean(body?.completed);
 
   if (!lessonSlug || !studentId || !studentName) {
     return NextResponse.json(
@@ -176,13 +227,24 @@ export async function POST(req: Request) {
     );
   }
 
-  const answers = {
-    icebreaker: asLimitedString(body?.answers?.icebreaker, 4000),
-    discussionNotes: asLimitedString(body?.answers?.discussionNotes, 8000),
-    actionBefore: asLimitedString(body?.answers?.actionBefore, 2000),
-    actionDuring: asLimitedString(body?.answers?.actionDuring, 2000),
-    actionAfter: asLimitedString(body?.answers?.actionAfter, 2000),
-  };
+  const incomingAnswers = body?.answers ?? null;
+  const shouldUpdateAnswers =
+    Boolean(incomingAnswers) &&
+    (typeof incomingAnswers?.icebreaker === "string" ||
+      typeof incomingAnswers?.discussionNotes === "string" ||
+      typeof incomingAnswers?.actionBefore === "string" ||
+      typeof incomingAnswers?.actionDuring === "string" ||
+      typeof incomingAnswers?.actionAfter === "string");
+
+  const answers = shouldUpdateAnswers
+    ? {
+        icebreaker: asLimitedString(incomingAnswers?.icebreaker, 4000),
+        discussionNotes: asLimitedString(incomingAnswers?.discussionNotes, 8000),
+        actionBefore: asLimitedString(incomingAnswers?.actionBefore, 2000),
+        actionDuring: asLimitedString(incomingAnswers?.actionDuring, 2000),
+        actionAfter: asLimitedString(incomingAnswers?.actionAfter, 2000),
+      }
+    : null;
 
   const db = await getMongoDb();
   if (!db) {
@@ -190,10 +252,23 @@ export async function POST(req: Request) {
   }
 
   const now = new Date();
+  const update: Record<string, unknown> = {
+    lessonSlug,
+    studentId,
+    studentName,
+    updatedAt: now,
+  };
+  if (shouldUpdateAnswers && answers) {
+    update.answers = answers;
+  }
+  if (completed !== null) {
+    update.completed = completed;
+  }
+
   await db.collection("lesson_responses").updateOne(
     { lessonSlug, studentId },
     {
-      $set: { lessonSlug, studentId, studentName, answers, updatedAt: now },
+      $set: update,
       $setOnInsert: { createdAt: now },
     },
     { upsert: true },

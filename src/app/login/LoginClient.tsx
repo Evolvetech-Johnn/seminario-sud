@@ -16,8 +16,8 @@ export function LoginClient() {
 
   const nextUrl = useMemo(() => {
     const raw = searchParams.get("next");
-    if (!raw) return "/aulas/exodo-20-1-11";
-    if (!raw.startsWith("/")) return "/aulas/exodo-20-1-11";
+    if (!raw) return "/aulas/aula-1-010-overview";
+    if (!raw.startsWith("/")) return "/aulas/aula-1-010-overview";
     return raw;
   }, [searchParams]);
 
