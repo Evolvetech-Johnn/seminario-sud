@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getMongoDb, getMongoDiagnostics } from "@/lib/mongodb";
-import { createTeacherSessionToken } from "@/lib/teacherSession";
+import { createTeacherSessionToken } from "@/lib/server/teacherAuth";
 import { signJwt } from "@/lib/teacherJwt";
 import crypto from "node:crypto";
 import { rateLimit } from "@/lib/server/security";
@@ -20,7 +20,7 @@ function asString(value: unknown, maxLen: number) {
 }
 
 function getJwtSecret() {
-  const secret = process.env.TEACHER_JWT_SECRET || process.env.JWT_SECRET;
+  const secret = process.env.TEACHER_JWT_SECRET || process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
   if (secret) return secret;
   if (process.env.NODE_ENV !== "production") return "dev-teacher-jwt-secret";
   return "";
@@ -122,7 +122,7 @@ export async function POST(req: Request) {
           }
           const token = signJwt({ teacher }, secret, 60 * 60 * 8);
           const res = NextResponse.json({ token, teacher }, { status: 200, headers });
-          const sessionToken = createTeacherSessionToken(teacher, 60 * 60 * 8);
+          const sessionToken = await createTeacherSessionToken(teacher, 60 * 60 * 8);
           if (sessionToken) {
             res.cookies.set({
               name: "teacherSession",
@@ -205,7 +205,7 @@ export async function POST(req: Request) {
 
       const token = signJwt({ teacher }, secret, 60 * 60 * 8);
       const res = NextResponse.json({ token, teacher }, { status: 200, headers });
-      const sessionToken = createTeacherSessionToken(teacher, 60 * 60 * 8);
+      const sessionToken = await createTeacherSessionToken(teacher, 60 * 60 * 8);
       if (!sessionToken) {
         return NextResponse.json({ error: "JWT_SECRET não configurado" }, { status: 500, headers });
       }
@@ -325,7 +325,7 @@ export async function POST(req: Request) {
       email: "johnathan",
     };
     const res = NextResponse.json({ ok: true }, { headers });
-    const sessionToken = createTeacherSessionToken(teacher, 60 * 60 * 8);
+    const sessionToken = await createTeacherSessionToken(teacher, 60 * 60 * 8);
     if (!sessionToken) {
       return NextResponse.json({ ok: false, error: "JWT_SECRET não configurado" }, { status: 500, headers });
     }

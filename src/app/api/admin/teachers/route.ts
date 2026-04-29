@@ -3,11 +3,11 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { getMongoDb } from "@/lib/mongodb";
-import { readTeacherFromSessionToken, TEACHER_SESSION_COOKIE } from "@/lib/teacherSession";
+import { getTeacherSession } from "@/lib/server/teacherAuth";
 import { requireSameOrigin, rateLimit } from "@/lib/server/security";
 
 function requireTeacherAuth() {
-  return cookies().then((c) => Boolean(readTeacherFromSessionToken(c.get(TEACHER_SESSION_COOKIE)?.value ?? "")));
+  return cookies().then(async () => Boolean(await getTeacherSession()));
 }
 
 function asString(value: unknown, maxLen: number) {

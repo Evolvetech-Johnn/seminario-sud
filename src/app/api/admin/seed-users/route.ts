@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { getMongoDb } from "@/lib/mongodb";
-import { readTeacherFromSessionToken, TEACHER_SESSION_COOKIE } from "@/lib/teacherSession";
+import { getTeacherSession } from "@/lib/server/teacherAuth";
 import { requireSameOrigin, rateLimit } from "@/lib/server/security";
 
 function normalizeEmail(raw: string) {
@@ -26,8 +26,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const store = await cookies();
-  const auth = Boolean(readTeacherFromSessionToken(store.get(TEACHER_SESSION_COOKIE)?.value ?? ""));
+  await cookies();
+  const auth = Boolean(await getTeacherSession());
   if (!auth) return NextResponse.json({ ok: false, error: "Não autorizado" }, { status: 401 });
 
   const db = await getMongoDb();

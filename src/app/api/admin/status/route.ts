@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { readTeacherFromSessionToken, TEACHER_SESSION_COOKIE } from "@/lib/teacherSession";
+import { getTeacherSession } from "@/lib/server/teacherAuth";
 
 export async function GET() {
-  const store = await cookies();
-  const authenticated = Boolean(readTeacherFromSessionToken(store.get(TEACHER_SESSION_COOKIE)?.value ?? ""));
+  await cookies();
+  const authenticated = Boolean(await getTeacherSession());
   return NextResponse.json({ authenticated });
 }

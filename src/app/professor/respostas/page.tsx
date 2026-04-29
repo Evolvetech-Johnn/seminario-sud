@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { AppHeader } from "@/components/seminario/AppHeader";
 import { getMongoDb } from "@/lib/mongodb";
-import { readTeacherFromSessionToken, TEACHER_SESSION_COOKIE } from "@/lib/teacherSession";
+import { getTeacherSession } from "@/lib/server/teacherAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +14,8 @@ type Props = {
 };
 
 export default async function TeacherResponsesPage({ searchParams }: Props) {
-  const store = await cookies();
-  const isAuthed = Boolean(readTeacherFromSessionToken(store.get(TEACHER_SESSION_COOKIE)?.value ?? ""));
+  await cookies();
+  const isAuthed = Boolean(await getTeacherSession());
   if (!isAuthed) {
     redirect("/professor/login?next=/professor/respostas");
   }

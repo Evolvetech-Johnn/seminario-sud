@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createTeacherSessionToken } from "@/lib/teacherSession";
+import { createTeacherSessionToken } from "@/lib/server/teacherAuth";
 
 function safeNextUrl(value: string | null) {
   if (!value) return "/admin/dashboard";
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
     name: process.env.TEACHER_NAME ?? "Professor",
     email: process.env.TEACHER_EMAIL?.trim().toLowerCase() ?? "autologin",
   };
-  const token = createTeacherSessionToken(teacher, 60 * 60 * 8);
+  const token = await createTeacherSessionToken(teacher, 60 * 60 * 8);
   if (!token) {
     return NextResponse.redirect(new URL(`/professor/login?next=${encodeURIComponent(nextUrl)}`, url.origin));
   }

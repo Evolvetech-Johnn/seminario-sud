@@ -11,18 +11,21 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+  const [teacher, setTeacher] = useState<{ name: string; email: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/admin/status", { cache: "no-store" })
+    fetch("/api/admin/me", { cache: "no-store" })
       .then(async (res) => {
         const json = (await res.json().catch(() => null)) as any;
         if (cancelled) return;
         setAuthenticated(Boolean(json?.authenticated));
+        setTeacher(json?.teacher && typeof json.teacher === "object" ? { name: String(json.teacher.name ?? ""), email: String(json.teacher.email ?? "") } : null);
       })
       .catch(() => {
         if (cancelled) return;
         setAuthenticated(false);
+        setTeacher(null);
       });
     return () => {
       cancelled = true;
@@ -78,6 +81,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-2">
+            {authenticated === true && teacher?.name ? (
+              <div
+                className="hidden max-w-[16rem] truncate rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-800 ring-1 ring-slate-200 sm:block"
+                title={teacher.email ? `${teacher.name} (${teacher.email})` : teacher.name}
+              >
+                {teacher.name}
+              </div>
+            ) : null}
             {authenticated === false ? (
               <button
                 type="button"
