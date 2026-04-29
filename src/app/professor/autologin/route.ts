@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
 function safeNextUrl(value: string | null) {
-  if (!value) return "/professor/respostas";
-  if (!value.startsWith("/")) return "/professor/respostas";
-  if (value.startsWith("//")) return "/professor/respostas";
-  if (!value.startsWith("/professor/")) return "/professor/respostas";
+  if (!value) return "/admin/dashboard";
+  if (!value.startsWith("/")) return "/admin/dashboard";
+  if (value.startsWith("//")) return "/admin/dashboard";
+  if (!(value.startsWith("/professor/") || value.startsWith("/admin/"))) return "/admin/dashboard";
   return value;
 }
 

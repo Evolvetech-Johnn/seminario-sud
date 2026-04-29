@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { AppHeader } from "@/components/seminario/AppHeader";
 import { getMongoDb } from "@/lib/mongodb";
 
@@ -38,6 +39,24 @@ export default async function TeacherResponsesPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/admin/dashboard"
+              className="rounded-2xl bg-sud-navy px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sud-navy/90"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/admin/students"
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-sud-gray"
+            >
+              Alunos
+            </Link>
+            <Link
+              href="/admin/attendance"
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-sud-gray"
+            >
+              Chamada
+            </Link>
             <form action="/api/teacher/logout" method="post">
               <button className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-sud-gray">
                 Sair

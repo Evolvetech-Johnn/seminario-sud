@@ -15,7 +15,7 @@ type Props = {
 export default function TeacherLoginPage({ searchParams }: Props) {
   if (process.env.TEACHER_AUTOLOGIN === "1") {
     const rawNext = searchParams?.next;
-    const nextUrl = typeof rawNext === "string" ? rawNext : "/professor/respostas";
+    const nextUrl = typeof rawNext === "string" ? rawNext : "/admin/dashboard";
     redirect(`/professor/autologin?next=${encodeURIComponent(nextUrl)}`);
   }
 

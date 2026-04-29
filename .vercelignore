@@ -1,0 +1,10 @@
+node_modules
+build
+dist
+.next
+.turbo
+.vercel
+.git
+.trae
+.log
+.figma

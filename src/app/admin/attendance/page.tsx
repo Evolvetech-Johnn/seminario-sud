@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 
 import { cn } from "@/lib/cn";
-import { useAuthStore } from "@/modules/auth/auth.store";
 import {
   useAttendanceSession,
   useAttendanceSessions,
@@ -21,16 +20,14 @@ function formatDate(iso: string) {
 }
 
 export default function AttendanceAdminPage() {
-  const accessToken = useAuthStore((s) => s.accessToken);
-
   const [selectedDate, setSelectedDate] = useState(todayIsoDate());
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
-  const sessions = useAttendanceSessions(accessToken, selectedDate);
-  const createSession = useCreateAttendanceSession(accessToken);
-  const sessionDetails = useAttendanceSession(accessToken, selectedSessionId);
+  const sessions = useAttendanceSessions(selectedDate);
+  const createSession = useCreateAttendanceSession();
+  const sessionDetails = useAttendanceSession(selectedSessionId);
 
-  const items = sessions.data?.sessions ?? [];
+  const items = useMemo(() => sessions.data?.data ?? [], [sessions.data?.data]);
 
   const selected = useMemo(() => {
     const id = selectedSessionId ?? items[0]?.id ?? null;
@@ -71,8 +68,8 @@ export default function AttendanceAdminPage() {
             type="button"
             disabled={createSession.isPending}
             onClick={async () => {
-              const created = await createSession.mutateAsync({ date: selectedDate }).catch(() => null);
-              const id = created?.session?.id ?? null;
+              const created = await createSession.mutateAsync({ dateIso: selectedDate }).catch(() => null);
+              const id = (created as any)?.data?.session?.id ?? null;
               if (id) setSelectedSessionId(id);
             }}
             className="w-full rounded-xl bg-sud-navy px-4 py-2 text-sm font-bold text-white transition hover:bg-sud-navy/90 disabled:opacity-60"
@@ -104,7 +101,7 @@ export default function AttendanceAdminPage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm font-bold text-slate-900">{formatDate(s.date)}</div>
+                    <div className="text-sm font-bold text-slate-900">{formatDate(s.dateIso)}</div>
                     <div className="mt-1 text-xs font-semibold text-slate-600">
                       {s.presentCount} presentes • {s.absentCount} faltas
                     </div>
@@ -139,7 +136,7 @@ export default function AttendanceAdminPage() {
                 <div className="px-4 py-6 text-sm text-rose-700">Falha ao carregar detalhes.</div>
               ) : null}
 
-              {sessionDetails.data?.session ? (
+              {sessionDetails.data?.data ? (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -156,11 +153,11 @@ export default function AttendanceAdminPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {sessionDetails.data.session.records.map((r) => (
+                      {sessionDetails.data.data.records.map((r) => (
                         <tr key={r.id} className="border-b border-slate-100">
                           <td className="px-4 py-4">
-                            <div className="text-sm font-bold text-slate-900">{r.student.name}</div>
-                            <div className="mt-1 text-xs font-semibold text-slate-600">{r.student.email}</div>
+                            <div className="text-sm font-bold text-slate-900">{r.studentName}</div>
+                            <div className="mt-1 text-xs font-semibold text-slate-600">{r.studentEmail ?? "—"}</div>
                           </td>
                           <td className="px-4 py-4">
                             <div className="inline-flex rounded-xl bg-slate-900 px-3 py-1.5 font-mono text-sm font-extrabold text-white">
@@ -194,4 +191,3 @@ export default function AttendanceAdminPage() {
     </div>
   );
 }
-

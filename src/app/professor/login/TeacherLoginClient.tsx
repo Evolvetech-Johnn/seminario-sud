@@ -11,12 +11,16 @@ export function TeacherLoginClient() {
   const searchParams = useSearchParams();
   const nextUrl = useMemo(() => {
     const raw = searchParams.get("next");
-    if (!raw) return "/professor/respostas";
-    if (!raw.startsWith("/")) return "/professor/respostas";
+    if (!raw) return "/admin/dashboard";
+    if (!raw.startsWith("/")) return "/admin/dashboard";
+    if (raw.startsWith("//")) return "/admin/dashboard";
     return raw;
   }, [searchParams]);
 
+
+  const [mode, setMode] = useState<"username" | "email">("username");
   const [username] = useState("johnathan");
+  const [email, setEmail] = useState("");
   const [initialized, setInitialized] = useState<boolean | null>(null);
   const [ready, setReady] = useState<boolean>(true);
   const [password, setPassword] = useState("");
@@ -27,6 +31,11 @@ export function TeacherLoginClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    if (mode !== "username") {
+      setInitialized(true);
+      setReady(true);
+      return;
+    }
     let cancelled = false;
     fetch("/api/teacher/status", { cache: "no-store" })
       .then(async (res) => {
@@ -51,7 +60,7 @@ export function TeacherLoginClient() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [mode]);
 
   const canSubmit = useMemo(() => {
     if (initialized === null) return false;
@@ -70,9 +79,11 @@ export function TeacherLoginClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          initialized
-            ? { username, password }
-            : { username, password, confirmPassword },
+          mode === "email"
+            ? { email, password }
+            : initialized
+              ? { username, password }
+              : { username, password, confirmPassword },
         ),
       });
       if (!res.ok) {
@@ -106,7 +117,7 @@ export function TeacherLoginClient() {
           <div className="border-b border-slate-200/70 bg-white px-6 py-6 sm:px-10">
             <div className="text-sm font-semibold text-slate-700">Acesso do professor</div>
             <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              {initialized === false ? "Crie sua senha" : "Entre com sua senha"}
+              {mode === "email" ? "Entre com seu email" : initialized === false ? "Crie sua senha" : "Entre com sua senha"}
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
               Apenas professores têm acesso às respostas dos alunos.
@@ -120,14 +131,52 @@ export function TeacherLoginClient() {
               </div>
             ) : null}
 
-            <label className="block">
-              <div className="text-sm font-semibold text-slate-900">Usuário</div>
-              <input
-                value={username}
-                readOnly
-                className="mt-2 w-full cursor-not-allowed rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none"
-              />
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="text-sm font-semibold text-slate-900">Modo</div>
+              <div className="inline-flex rounded-full bg-sud-gray p-1 ring-1 ring-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setMode("username")}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-xs font-bold transition",
+                    mode === "username" ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:bg-white/70",
+                  )}
+                >
+                  Usuário
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("email")}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-xs font-bold transition",
+                    mode === "email" ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:bg-white/70",
+                  )}
+                >
+                  Email
+                </button>
+              </div>
+            </div>
+
+            {mode === "username" ? (
+              <label className="mt-4 block">
+                <div className="text-sm font-semibold text-slate-900">Usuário</div>
+                <input
+                  value={username}
+                  readOnly
+                  className="mt-2 w-full cursor-not-allowed rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none"
+                />
+              </label>
+            ) : (
+              <label className="mt-4 block">
+                <div className="text-sm font-semibold text-slate-900">Email</div>
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="ex: arthur.souza@seminario.local"
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sud-blue/60 focus:ring-4 focus:ring-sud-blue/15"
+                />
+              </label>
+            )}
 
             <div className="mt-6">
               <div className="flex items-center justify-between gap-3">
@@ -152,7 +201,7 @@ export function TeacherLoginClient() {
               />
             </div>
 
-            {initialized === false ? (
+            {mode === "username" && initialized === false ? (
               <div className="mt-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-sm font-semibold text-slate-900">Confirmar senha</div>
