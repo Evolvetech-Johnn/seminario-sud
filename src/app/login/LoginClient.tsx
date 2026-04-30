@@ -23,6 +23,10 @@ export function LoginClient() {
 
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"login" | "setPassword">("login");
+  const [tempPassword, setTempPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [showCode, setShowCode] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,6 +71,37 @@ export function LoginClient() {
             </div>
 
             <div className="px-6 py-6 sm:px-10 sm:py-8">
+              <div className="mb-5 inline-flex rounded-full bg-sud-gray p-1 ring-1 ring-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("login");
+                    setError(null);
+                  }}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-xs font-bold transition",
+                    mode === "login" ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:bg-white/70",
+                  )}
+                >
+                  Entrar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("setPassword");
+                    setError(null);
+                  }}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-xs font-bold transition",
+                    mode === "setPassword"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-700 hover:bg-white/70",
+                  )}
+                >
+                  Criar senha
+                </button>
+              </div>
+
               <div className="grid gap-4">
                 <label className="block">
                   <div className="text-sm font-semibold text-slate-900">Usuário</div>
@@ -81,28 +116,83 @@ export function LoginClient() {
                   />
                 </label>
 
-                <div>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm font-semibold text-slate-900">Senha</div>
-                    <button
-                      type="button"
-                      onClick={() => setShowCode((v) => !v)}
-                      className="rounded-full bg-sud-gray px-3 py-1 text-xs font-bold text-slate-800 ring-1 ring-slate-200 transition hover:bg-white"
-                    >
-                      {showCode ? "Ocultar" : "Mostrar"}
-                    </button>
+                {mode === "login" ? (
+                  <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-semibold text-slate-900">Senha</div>
+                      <button
+                        type="button"
+                        onClick={() => setShowCode((v) => !v)}
+                        className="rounded-full bg-sud-gray px-3 py-1 text-xs font-bold text-slate-800 ring-1 ring-slate-200 transition hover:bg-white"
+                      >
+                        {showCode ? "Ocultar" : "Mostrar"}
+                      </button>
+                    </div>
+                    <input
+                      type={showCode ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (error) setError(null);
+                      }}
+                      placeholder="Senha fornecida pelo professor"
+                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sud-blue/60 focus:ring-4 focus:ring-sud-blue/15"
+                    />
                   </div>
-                  <input
-                    type={showCode ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (error) setError(null);
-                    }}
-                    placeholder="Senha fornecida pelo professor"
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sud-blue/60 focus:ring-4 focus:ring-sud-blue/15"
-                  />
-                </div>
+                ) : (
+                  <>
+                    <div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-sm font-semibold text-slate-900">Senha temporária</div>
+                        <button
+                          type="button"
+                          onClick={() => setShowCode((v) => !v)}
+                          className="rounded-full bg-sud-gray px-3 py-1 text-xs font-bold text-slate-800 ring-1 ring-slate-200 transition hover:bg-white"
+                        >
+                          {showCode ? "Ocultar" : "Mostrar"}
+                        </button>
+                      </div>
+                      <input
+                        type={showCode ? "text" : "password"}
+                        value={tempPassword}
+                        onChange={(e) => {
+                          setTempPassword(e.target.value);
+                          if (error) setError(null);
+                        }}
+                        placeholder="Senha temporária (resetada pelo professor)"
+                        className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sud-blue/60 focus:ring-4 focus:ring-sud-blue/15"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Nova senha</div>
+                      <input
+                        type={showCode ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => {
+                          setNewPassword(e.target.value);
+                          if (error) setError(null);
+                        }}
+                        placeholder="Mínimo 6 caracteres"
+                        className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sud-blue/60 focus:ring-4 focus:ring-sud-blue/15"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Confirmar nova senha</div>
+                      <input
+                        type={showCode ? "text" : "password"}
+                        value={confirmNewPassword}
+                        onChange={(e) => {
+                          setConfirmNewPassword(e.target.value);
+                          if (error) setError(null);
+                        }}
+                        placeholder="Repita a nova senha"
+                        className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sud-blue/60 focus:ring-4 focus:ring-sud-blue/15"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -123,6 +213,62 @@ export function LoginClient() {
                         if (isSubmitting) return;
                         setIsSubmitting(true);
                         try {
+                          if (mode === "setPassword") {
+                            if (newPassword.length < 6) {
+                              setError("A nova senha deve ter pelo menos 6 caracteres.");
+                              return;
+                            }
+                            if (newPassword !== confirmNewPassword) {
+                              setError("A confirmação não confere.");
+                              return;
+                            }
+                            const resSet = await fetch("/api/student/set-password", {
+                              method: "POST",
+                              headers: { "content-type": "application/json" },
+                              body: JSON.stringify({
+                                login,
+                                tempPassword,
+                                newPassword,
+                              }),
+                            });
+                            const jsonSet = (await resSet.json().catch(() => null)) as any;
+                            if (!resSet.ok || jsonSet?.ok !== true) {
+                              setError(jsonSet?.error ?? "Não foi possível criar a senha");
+                              return;
+                            }
+                            setPassword(newPassword);
+                            setTempPassword("");
+                            setConfirmNewPassword("");
+                            setMode("login");
+                            const newPass = newPassword;
+                            setNewPassword("");
+
+                            const res = await fetch("/api/student/login", {
+                              method: "POST",
+                              headers: { "content-type": "application/json" },
+                              body: JSON.stringify({ login, password: newPass }),
+                            });
+                            const json = (await res.json().catch(() => null)) as any;
+                            if (!res.ok || json?.ok !== true) {
+                              setError(json?.error ?? "Não foi possível entrar");
+                              return;
+                            }
+                            const student = json?.data?.student;
+                            if (!student?.id || !student?.name) {
+                              setError("Não foi possível entrar");
+                              return;
+                            }
+                            setSession({
+                              id: String(student.id),
+                              name: String(student.name),
+                              login: student.login ? String(student.login) : undefined,
+                              email: student.email ? String(student.email) : null,
+                              createdAt: new Date().toISOString(),
+                            });
+                            router.replace(nextUrl);
+                            return;
+                          }
+
                           const res = await fetch("/api/student/login", {
                             method: "POST",
                             headers: { "content-type": "application/json" },
@@ -155,7 +301,7 @@ export function LoginClient() {
                     }}
                     className="inline-flex w-full items-center justify-center rounded-2xl bg-sud-blue px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sud-navy focus:outline-none focus:ring-4 focus:ring-sud-blue/25 sm:w-auto"
                   >
-                    {isSubmitting ? "Entrando..." : "Entrar"}
+                    {isSubmitting ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar senha e entrar"}
                   </button>
                 </div>
               </div>

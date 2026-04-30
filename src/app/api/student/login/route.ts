@@ -28,10 +28,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Credenciais inválidas" }, { status: 400 });
   }
 
-  const student = await db.collection("students").findOne(
-    { login },
-    { projection: { _id: 0, id: 1, name: 1, email: 1, login: 1, salt: 1, hash: 1 } },
-  );
+  const query = login.includes("@") ? { email: login } : { login };
+  const student = await db
+    .collection("students")
+    .findOne(query, { projection: { _id: 0, id: 1, name: 1, email: 1, login: 1, salt: 1, hash: 1 } });
 
   if (!student || !student.salt || !student.hash) {
     return NextResponse.json({ ok: false, error: "Credenciais inválidas" }, { status: 401 });
@@ -54,4 +54,3 @@ export async function POST(req: Request) {
     },
   });
 }
-

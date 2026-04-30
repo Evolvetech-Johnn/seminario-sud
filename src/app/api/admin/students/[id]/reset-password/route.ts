@@ -6,6 +6,19 @@ import { getTeacherSession } from "@/lib/server/teacherAuth";
 import { requireSameOrigin, rateLimit } from "@/lib/server/security";
 import { createPasswordHash, generateTempPassword } from "@/lib/password";
 
+function slugifyLogin(name: string) {
+  const normalized = name
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, ".")
+    .replace(/\.+/g, ".")
+    .slice(0, 32);
+  return normalized || "aluno";
+}
+
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
   const sameOrigin = requireSameOrigin(req);
   if (!sameOrigin.ok) return NextResponse.json({ ok: false, error: sameOrigin.error }, { status: 403 });
@@ -28,16 +41,33 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   const tempPassword = generateTempPassword();
   const { salt, hash } = createPasswordHash(tempPassword);
 
+  const student = await db.collection("students").findOne(
+    { id: studentId },
+    { projection: { _id: 0, id: 1, name: 1, login: 1 } },
+  );
+  if (!student) return NextResponse.json({ ok: false, error: "Aluno não encontrado" }, { status: 404 });
+
+  let login = typeof (student as any).login === "string" ? String((student as any).login).trim().toLowerCase() : "";
+  if (!login) {
+    const base = slugifyLogin(String((student as any).name ?? ""));
+    login = base;
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      const candidate = attempt === 0 ? base : `${base}.${Math.random().toString(16).slice(2, 6)}`;
+      const exists = await db.collection("students").findOne({ login: candidate }, { projection: { _id: 0, id: 1 } });
+      if (!exists) {
+        login = candidate;
+        break;
+      }
+    }
+  }
+
   const updatedAt = new Date().toISOString();
   const res = await db.collection("students").findOneAndUpdate(
     { id: studentId },
-    { $set: { salt, hash, updatedAt } },
+    { $set: { salt, hash, updatedAt, login } },
     { returnDocument: "after", projection: { _id: 0, id: 1, name: 1, login: 1, updatedAt: 1 } },
   );
 
   const doc = res?.value as any;
-  if (!doc) return NextResponse.json({ ok: false, error: "Aluno não encontrado" }, { status: 404 });
-
   return NextResponse.json({ ok: true, data: { id: doc.id, name: doc.name, login: doc.login ?? null, tempPassword } });
 }
-
