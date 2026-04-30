@@ -79,3 +79,22 @@ export function useConfirmAttendance() {
       ),
   });
 }
+
+export function useUpdateAttendanceRecord() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { recordId: string; present: boolean; sessionId: string }) =>
+      adminFetch<{ ok: true; data: AttendanceSessionDetails["records"][number] }>(
+        `/api/admin/attendance/records/${encodeURIComponent(input.recordId)}`,
+        {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ present: input.present }),
+        },
+      ),
+    onSuccess: async (_data, variables) => {
+      await qc.invalidateQueries({ queryKey: ["attendance", "session", variables.sessionId] });
+      await qc.invalidateQueries({ queryKey: ["attendance", "sessions"] });
+    },
+  });
+}

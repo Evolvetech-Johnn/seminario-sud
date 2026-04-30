@@ -113,6 +113,23 @@ export async function POST(req: Request) {
   const dateIso = asString(body?.dateIso, 20) || new Date().toISOString().slice(0, 10);
   const lessonSlug = asString(body?.lessonSlug, 120) || null;
 
+  const existingSession = await db
+    .collection("attendance_sessions")
+    .findOne({ dateIso }, { projection: { _id: 0 } });
+
+  if (existingSession) {
+    const records = await db
+      .collection("attendance_records")
+      .find({ sessionId: String((existingSession as any).id) }, { projection: { _id: 0 } })
+      .sort({ studentName: 1 })
+      .toArray();
+
+    return NextResponse.json(
+      { ok: true, data: { session: existingSession, records, reused: true } },
+      { status: 200 },
+    );
+  }
+
   const students = await db
     .collection("students")
     .find({}, { projection: { _id: 0, id: 1, name: 1, email: 1 } })
@@ -127,11 +144,29 @@ export async function POST(req: Request) {
     createdAt: now,
   };
 
-  await db.collection("attendance_sessions").insertOne(session as any);
+  const upserted = await db.collection("attendance_sessions").findOneAndUpdate(
+    { dateIso },
+    { $setOnInsert: session },
+    { upsert: true, returnDocument: "after", projection: { _id: 0 } },
+  );
+
+  const createdSession = (upserted as any)?.value ?? session;
+  if (String(createdSession.id) !== session.id) {
+    const records = await db
+      .collection("attendance_records")
+      .find({ sessionId: String(createdSession.id) }, { projection: { _id: 0 } })
+      .sort({ studentName: 1 })
+      .toArray();
+
+    return NextResponse.json(
+      { ok: true, data: { session: createdSession, records, reused: true } },
+      { status: 200 },
+    );
+  }
 
   const records = (students as any[]).map((s) => ({
     id: `attrec:${crypto.randomUUID()}`,
-    sessionId: session.id,
+    sessionId: createdSession.id,
     studentId: String(s.id),
     studentName: String(s.name ?? ""),
     studentEmail: s.email ?? null,
@@ -145,5 +180,5 @@ export async function POST(req: Request) {
     await db.collection("attendance_records").insertMany(records as any[]);
   }
 
-  return NextResponse.json({ ok: true, data: { session, records } }, { status: 201 });
+  return NextResponse.json({ ok: true, data: { session: createdSession, records } }, { status: 201 });
 }

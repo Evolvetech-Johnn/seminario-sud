@@ -19,6 +19,8 @@ export default function AdminStudentsPage() {
   const [createPending, setCreatePending] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [resetPasswordMsg, setResetPasswordMsg] = useState<string | null>(null);
+  const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
+  const [resetPending, setResetPending] = useState(false);
   const [createSuccess, setCreateSuccess] = useState<
     | null
     | {
@@ -63,6 +65,12 @@ export default function AdminStudentsPage() {
           Criar usuário
         </button>
       </div>
+
+      {!createOpen && createError ? (
+        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
+          {createError}
+        </div>
+      ) : null}
 
       {createOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8">
@@ -293,6 +301,8 @@ export default function AdminStudentsPage() {
                     setDraftEmail(u.email ?? "");
                     setDraftLogin(u.login ?? "");
                     setResetPasswordMsg(null);
+                    setResetPasswordError(null);
+                    setCreateError(null);
                   }}
                   className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 transition hover:bg-slate-50"
                 >
@@ -335,13 +345,21 @@ export default function AdminStudentsPage() {
                     </div>
                   ) : null}
 
+                  {resetPasswordError ? (
+                    <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
+                      {resetPasswordError}
+                    </div>
+                  ) : null}
+
                   <div className="mt-4 flex flex-wrap justify-end gap-2">
                     <button
                       type="button"
-                      disabled={update.isPending}
+                      disabled={update.isPending || resetPending}
                       onClick={async () => {
                         setCreateError(null);
                         setResetPasswordMsg(null);
+                        setResetPasswordError(null);
+                        setResetPending(true);
                         try {
                           const res = await fetch(
                             `/api/admin/students/${encodeURIComponent(u.id)}/reset-password`,
@@ -355,14 +373,15 @@ export default function AdminStudentsPage() {
                             `Senha temporária gerada${login ? ` para ${login}` : ""}: ${pwd}`,
                           );
                         } catch (err) {
-                          setCreateError(err instanceof Error ? err.message : "Erro ao resetar senha");
+                          setResetPasswordError(err instanceof Error ? err.message : "Erro ao resetar senha");
                         }
+                        setResetPending(false);
                       }}
                       className={cn(
                         "rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60",
                       )}
                     >
-                      Resetar senha
+                      {resetPending ? "Resetando..." : "Resetar senha"}
                     </button>
                     <button
                       type="button"

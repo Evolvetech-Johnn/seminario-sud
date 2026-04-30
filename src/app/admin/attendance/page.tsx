@@ -7,6 +7,7 @@ import {
   useAttendanceSession,
   useAttendanceSessions,
   useCreateAttendanceSession,
+  useUpdateAttendanceRecord,
 } from "@/modules/attendance/attendance.api";
 
 function todayIsoDate() {
@@ -26,6 +27,7 @@ export default function AttendanceAdminPage() {
   const sessions = useAttendanceSessions(selectedDate);
   const createSession = useCreateAttendanceSession();
   const sessionDetails = useAttendanceSession(selectedSessionId);
+  const updateRecord = useUpdateAttendanceRecord();
 
   const items = useMemo(() => sessions.data?.data ?? [], [sessions.data?.data]);
 
@@ -174,6 +176,30 @@ export default function AttendanceAdminPage() {
                               )}
                             >
                               {r.present ? "Presente" : "Falta"}
+                            </div>
+                            <div className="mt-2">
+                              <button
+                                type="button"
+                                disabled={updateRecord.isPending}
+                                onClick={async () => {
+                                  await updateRecord
+                                    .mutateAsync({
+                                      recordId: r.id,
+                                      present: !r.present,
+                                      sessionId: sessionDetails.data?.data?.session?.id ?? "",
+                                    })
+                                    .catch(() => null);
+                                }}
+                                className={cn(
+                                  "rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 transition hover:bg-slate-50 disabled:opacity-60",
+                                )}
+                              >
+                                {updateRecord.isPending
+                                  ? "Salvando..."
+                                  : r.present
+                                    ? "Marcar falta"
+                                    : "Marcar presente"}
+                              </button>
                             </div>
                           </td>
                         </tr>
