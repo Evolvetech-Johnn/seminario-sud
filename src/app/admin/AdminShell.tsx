@@ -43,6 +43,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
           <nav className="flex items-center gap-2">
             <Link
+              href="/admin/demo"
+              className={cn(
+                "rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100",
+                pathname?.startsWith("/admin/demo") && "bg-slate-100 text-slate-900",
+              )}
+            >
+              Demo
+            </Link>
+            <Link
               href="/admin/dashboard"
               className={cn(
                 "rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100",

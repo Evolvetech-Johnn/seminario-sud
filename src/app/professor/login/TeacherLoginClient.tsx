@@ -11,9 +11,9 @@ export function TeacherLoginClient() {
   const searchParams = useSearchParams();
   const nextUrl = useMemo(() => {
     const raw = searchParams.get("next");
-    if (!raw) return "/admin/dashboard";
-    if (!raw.startsWith("/")) return "/admin/dashboard";
-    if (raw.startsWith("//")) return "/admin/dashboard";
+    if (!raw) return "/admin/demo";
+    if (!raw.startsWith("/")) return "/admin/demo";
+    if (raw.startsWith("//")) return "/admin/demo";
     return raw;
   }, [searchParams]);
 

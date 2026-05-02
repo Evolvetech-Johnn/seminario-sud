@@ -7,7 +7,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   await cookies();
   const isAuthed = Boolean(await getTeacherSession());
   if (!isAuthed) {
-    redirect("/professor/login?next=/admin/dashboard");
+    redirect("/professor/login?next=/admin/demo");
   }
   return <AdminShell>{children}</AdminShell>;
 }
