@@ -3,17 +3,32 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Gauge, GraduationCap, ListChecks, RefreshCw, Sparkles, UserRound, Users } from "lucide-react";
+import {
+  BookOpenCheck,
+  Gauge,
+  GraduationCap,
+  ListChecks,
+  RefreshCw,
+  Sparkles,
+  UserRound,
+  Users,
+} from "lucide-react";
 
-import { Card } from "@/components/seminario/Card";
 import { allLessonMetas } from "@/features/lessons/lessonMetas";
 
 import { DemoLinkCard } from "./DemoLinkCard";
+import { DemoKpiCard } from "./DemoKpis";
 import { DemoSeedPanel } from "./DemoSeedPanel";
 import { DemoGuidedActions } from "./DemoGuidedActions";
 import { DemoAttendancePanel, DemoResponsesPanel } from "./DemoPanels";
+import { DemoAnalytics } from "./DemoAnalytics";
 import type { AttendanceSessionListItem, LessonResponseDoc, Overview, StudentDoc } from "./demo.types";
 import { adminFetch, formatPercent } from "./demo.utils";
+import {
+  computeCompletionRate,
+  computeOverallAttendanceRate,
+  computeReflectionRate,
+} from "./demo.metrics";
 
 export function DemoClient() {
   const qc = useQueryClient();
@@ -33,7 +48,7 @@ export function DemoClient() {
     queryKey: ["demo", "attendance", "sessions"],
     queryFn: async () =>
       adminFetch<{ ok: true; data: AttendanceSessionListItem[] }>(
-        "/api/admin/attendance/sessions?limit=6",
+        "/api/admin/attendance/sessions?limit=60",
       ),
   });
 
@@ -41,7 +56,7 @@ export function DemoClient() {
     queryKey: ["demo", "lessonResponses"],
     queryFn: async () =>
       adminFetch<{ ok: true; storage: string; data: LessonResponseDoc[] }>(
-        "/api/admin/lesson-responses?limit=80",
+        "/api/admin/lesson-responses?limit=800",
       ),
   });
 
@@ -49,6 +64,13 @@ export function DemoClient() {
     const docs = responses.data?.data ?? [];
     return docs.filter((d) => Boolean(d?.completed)).length;
   }, [responses.data?.data]);
+
+  const completion = useMemo(() => computeCompletionRate(responses.data?.data ?? []), [responses.data?.data]);
+  const reflection = useMemo(() => computeReflectionRate(responses.data?.data ?? []), [responses.data?.data]);
+  const overallAttendance = useMemo(
+    () => computeOverallAttendanceRate(sessions.data?.data ?? []),
+    [sessions.data?.data],
+  );
 
   const checklist = useMemo(() => {
     const totalStudents = students.data?.data?.length ?? null;
@@ -76,28 +98,47 @@ export function DemoClient() {
     ]);
   };
 
+  const storageLabel = responses.data?.storage ? String((responses.data as any).storage) : "";
+
   return (
     <div className="py-10">
-      <div className="flex flex-col gap-2">
-        <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-600">
-          <Sparkles className="h-4 w-4" />
-          Página demo (Professor)
-        </div>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Demo do sistema</h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Atalhos, métricas e ações guiadas para apresentar todas as funcionalidades.
-            </p>
+      <div className="relative overflow-hidden rounded-[2.25rem] border border-slate-200 bg-white shadow-sm">
+        <div className="absolute inset-0 bg-gradient-to-br from-sud-navy/10 via-white to-white" />
+        <div className="relative p-6 sm:p-8">
+          <div className="flex flex-col gap-2">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-600">
+              <Sparkles className="h-4 w-4" />
+              Página demo (Professor)
+            </div>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+                  Demo do sistema
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm text-slate-600">
+                  Um painel visual para apresentar o produto e apoiar decisões com presença, entrega e engajamento.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-extrabold text-slate-800 ring-1 ring-slate-200">
+                    Acesso: professor
+                  </span>
+                  {storageLabel ? (
+                    <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-extrabold text-slate-800 ring-1 ring-slate-200">
+                      Storage: {storageLabel}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={refreshAll}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Recarregar
+              </button>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={refreshAll}
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Recarregar
-          </button>
         </div>
       </div>
 
@@ -152,20 +193,43 @@ export function DemoClient() {
         />
       </div>
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card
-          title="Total de aulas"
-          description={overview.data?.data ? String(overview.data.data.totalLessons) : overview.isLoading ? "..." : "—"}
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <DemoKpiCard
+          label="Alunos ativos"
+          value={overview.data?.data ? String(overview.data.data.totalStudents) : overview.isLoading ? "..." : "—"}
+          hint="Base: alunos cadastrados"
+          icon={<Users className="h-6 w-6 text-sud-navy" />}
+          accent="navy"
         />
-        <Card
-          title="Total de alunos"
-          description={overview.data?.data ? String(overview.data.data.totalStudents) : overview.isLoading ? "..." : "—"}
+        <DemoKpiCard
+          label="Presença média"
+          value={sessions.isLoading ? "..." : formatPercent(overallAttendance)}
+          hint="Sinal de participação"
+          icon={<Users className="h-6 w-6 text-sud-blue" />}
+          accent="blue"
         />
-        <Card
-          title="Progresso médio"
-          description={overview.data?.data ? formatPercent(overview.data.data.averageProgress) : overview.isLoading ? "..." : "—"}
+        <DemoKpiCard
+          label="Taxa de completude"
+          value={responses.isLoading ? "..." : formatPercent(completion.rate)}
+          hint={responses.isLoading ? "" : `${completion.completed}/${completion.total} completas`}
+          icon={<BookOpenCheck className="h-6 w-6 text-emerald-700" />}
+          accent="emerald"
+        />
+        <DemoKpiCard
+          label="Reflexões"
+          value={responses.isLoading ? "..." : formatPercent(reflection.rate)}
+          hint={responses.isLoading ? "" : `${reflection.withReflection}/${reflection.total} com notas`}
+          icon={<ListChecks className="h-6 w-6 text-amber-700" />}
+          accent="amber"
         />
       </div>
+
+      <DemoAnalytics
+        students={students.data?.data ?? []}
+        sessions={sessions.data?.data ?? []}
+        responses={responses.data?.data ?? []}
+        loading={overview.isLoading || students.isLoading || sessions.isLoading || responses.isLoading}
+      />
 
       {overview.isError ? (
         <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-800">
@@ -179,7 +243,7 @@ export function DemoClient() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <DemoResponsesPanel items={(responses.data?.data ?? []).slice(0, 20)} loading={responses.isLoading} />
-        <DemoAttendancePanel items={sessions.data?.data ?? []} loading={sessions.isLoading} />
+        <DemoAttendancePanel items={(sessions.data?.data ?? []).slice(0, 6)} loading={sessions.isLoading} />
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
@@ -211,4 +275,3 @@ export function DemoClient() {
     </div>
   );
 }
-

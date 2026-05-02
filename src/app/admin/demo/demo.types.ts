@@ -15,8 +15,10 @@ export type LessonResponseDoc = {
   studentId?: string;
   studentName?: string;
   completed?: boolean;
+  answers?: {
+    discussionNotes?: string;
+  };
   updatedAt?: string | Date;
 };
 
 export type StudentDoc = { id: string; name: string; email: string | null; login: string | null };
-
