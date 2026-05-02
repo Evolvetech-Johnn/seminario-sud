@@ -35,7 +35,13 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
   const body = (await req.json().catch(() => null)) as any;
   const name = body?.name === undefined ? undefined : asString(body?.name, 120);
   const email = body?.email === undefined ? undefined : asString(body?.email, 180) || null;
-  const login = body?.login === undefined ? undefined : asString(body?.login, 80).toLowerCase();
+  const login =
+    body?.login === undefined
+      ? undefined
+      : (() => {
+          const v = asString(body?.login, 80).toLowerCase();
+          return v ? v : undefined;
+        })();
 
   if (name !== undefined && name.length < 2) {
     return NextResponse.json({ ok: false, error: "Nome inválido" }, { status: 400 });
