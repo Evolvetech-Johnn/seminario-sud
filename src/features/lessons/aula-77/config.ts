@@ -4,8 +4,8 @@ export const aula77Lesson = {
   slug: "aula-77-182-numbers-21",
   title: "Números 21",
   subtitle: "Buscar o Salvador com fé",
-  date: "2026-07-09",
-  day: "qui",
+  date: "2026-05-06",
+  day: "ter",
   reference: "Números 21:4–9; João 3:14–16",
   sourceUrl:
     "https://www.churchofjesuschrist.org/study/manual/old-testament-seminary-manual-2026/18-numbers-11-14-21/182-numbers-21?lang=por",

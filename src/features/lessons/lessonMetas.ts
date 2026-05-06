@@ -544,8 +544,8 @@ export const allLessonMetas: LessonMeta[] = [
     slug: "aula-77-182-numbers-21",
     title: "Números 21",
     subtitle: "Buscar o Salvador com fé",
-    date: "2026-07-09",
-    day: "qui",
+    date: "2026-05-06",
+    day: "ter",
   },
 ];
 
