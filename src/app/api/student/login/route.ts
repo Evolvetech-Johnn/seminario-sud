@@ -57,7 +57,7 @@ export async function POST(req: Request) {
         { id: login },
       ],
     },
-    { projection: { _id: 0, id: 1, name: 1, email: 1, login: 1, salt: 1, hash: 1 } },
+    { projection: { _id: 0, id: 1, name: 1, email: 1, login: 1, salt: 1, hash: 1, ala: 1, turma: 1 } },
   );
 
   if (!student || !student.salt || !student.hash) {
@@ -77,6 +77,8 @@ export async function POST(req: Request) {
         name: String(student.name ?? ""),
         email: student.email ? String(student.email) : null,
         login: String(student.login ?? login),
+        ala: String(student.ala ?? "ala1"), // Default to ala1 if not set
+        turma: String(student.turma ?? "A"), // Default to A if not set
       },
     },
   });

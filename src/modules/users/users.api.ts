@@ -5,6 +5,8 @@ export type StudentDto = {
   name: string;
   email?: string | null;
   login?: string | null;
+  ala: string;
+  turma: string;
   createdAt: string;
   updatedAt?: string;
 };

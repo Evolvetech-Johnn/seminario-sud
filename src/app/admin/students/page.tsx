@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 import { useStudents, useUpdateStudent } from "@/modules/users/users.api";
 
 export default function AdminStudentsPage() {
-  const [query, setQuery] = useState("");
+  const [alaFilter, setAlaFilter] = useState<"ala1" | "ala2" | "ala3" | "all">("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [draftEmail, setDraftEmail] = useState("");
@@ -15,8 +15,8 @@ export default function AdminStudentsPage() {
   const [createRole, setCreateRole] = useState<"student" | "teacher">("student");
   const [createName, setCreateName] = useState("");
   const [createTeacherEmail, setCreateTeacherEmail] = useState("");
-  const [createStudentLogin, setCreateStudentLogin] = useState("");
-  const [createPending, setCreatePending] = useState(false);
+  const [createAla, setCreateAla] = useState<"ala1" | "ala2" | "ala3">("ala1");
+  const [createTurma, setCreateTurma] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
   const [resetPasswordMsg, setResetPasswordMsg] = useState<string | null>(null);
   const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
@@ -37,17 +37,23 @@ export default function AdminStudentsPage() {
 
   const items = useMemo(() => {
     const list = students.data?.data ?? [];
+    let filtered = list;
+
+    if (alaFilter !== "all") {
+      filtered = filtered.filter((u) => u.ala === alaFilter);
+    }
+
     const q = query.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter((u) => `${u.name} ${u.login ?? ""} ${u.email ?? ""}`.toLowerCase().includes(q));
-  }, [students.data?.data, query]);
+    if (!q) return filtered;
+    return filtered.filter((u) => `${u.name} ${u.login ?? ""} ${u.email ?? ""} ${u.ala} ${u.turma}`.toLowerCase().includes(q));
+  }, [students.data?.data, query, alaFilter]);
 
   return (
     <div className="py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Alunos</h1>
-          <div className="mt-2 text-sm text-slate-600">Editar nome e email dos alunos.</div>
+          <div className="mt-2 text-sm text-slate-600">Gerenciar alunos por ala e turma.</div>
         </div>
         <button
           type="button"
@@ -122,6 +128,39 @@ export default function AdminStudentsPage() {
                   </button>
                 </div>
               </div>
+
+              {createRole === "student" && (
+                <>
+                  <div className="grid gap-2">
+                    <div className="text-sm font-semibold text-slate-800">Ala</div>
+                    <div className="inline-flex rounded-full bg-sud-gray p-1 ring-1 ring-slate-200">
+                      {(["ala1", "ala2", "ala3"] as const).map((ala) => (
+                        <button
+                          key={ala}
+                          type="button"
+                          onClick={() => setCreateAla(ala)}
+                          className={cn(
+                            "rounded-full px-3 py-1 text-xs font-bold transition",
+                            createAla === ala ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:bg-white/70",
+                          )}
+                        >
+                          {ala.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <div className="text-sm font-semibold text-slate-800">Turma</div>
+                    <input
+                      value={createTurma}
+                      onChange={(e) => setCreateTurma(e.target.value.toUpperCase())}
+                      placeholder="Ex: A, B, C"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:border-slate-300"
+                    />
+                  </div>
+                </>
+              )}
 
               {createRole === "teacher" ? (
                 <label className="grid gap-2">
@@ -201,6 +240,10 @@ export default function AdminStudentsPage() {
                     setCreateError("Informe o nome completo.");
                     return;
                   }
+                  if (createRole === "student" && !createTurma.trim()) {
+                    setCreateError("Informe a turma do aluno.");
+                    return;
+                  }
 
                   setCreatePending(true);
                   try {
@@ -208,7 +251,12 @@ export default function AdminStudentsPage() {
                       const res = await fetch("/api/admin/students", {
                         method: "POST",
                         headers: { "content-type": "application/json" },
-                        body: JSON.stringify({ name, login: createStudentLogin.trim() || undefined }),
+                        body: JSON.stringify({
+                          name,
+                          login: createStudentLogin.trim() || undefined,
+                          ala: createAla,
+                          turma: createTurma.trim() || "A",
+                        }),
                       });
                       const json = (await res.json().catch(() => null)) as any;
                       if (!res.ok) throw new Error(json?.error ?? "Erro ao criar aluno");
@@ -257,19 +305,41 @@ export default function AdminStudentsPage() {
       ) : null}
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="mb-4">
+          <div className="inline-flex rounded-full bg-sud-gray p-1 ring-1 ring-slate-200">
+            {(["all", "ala1", "ala2", "ala3"] as const).map((ala) => (
+              <button
+                key={ala}
+                type="button"
+                onClick={() => setAlaFilter(ala)}
+                className={cn(
+                  "rounded-full px-3 py-1 text-xs font-bold transition",
+                  alaFilter === ala ? "bg-white text-slate-900 shadow-sm" : "text-slate-700 hover:bg-white/70",
+                )}
+              >
+                {ala === "all" ? "Todas as Alas" : ala.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
         <input
           id="search"
           name="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por nome, usuário ou email…"
+          placeholder="Buscar por nome, usuário, email, ala ou turma…"
           className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:border-slate-300"
         />
       </div>
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <div className="grid grid-cols-[1fr_220px_220px_160px] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-600">
+        <div className="grid grid-cols-[1fr_120px_80px_120px_160px] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-600">
           <div>Aluno</div>
+          <div>Ala</div>
+          <div>Turma</div>
+          <div>Usuário</div>
+          <div>Ações</div>
+        </div>
           <div>Usuário</div>
           <div>Email</div>
           <div>Ações</div>
@@ -281,16 +351,19 @@ export default function AdminStudentsPage() {
         {items.map((u) => {
           const isEditing = editingId === u.id;
           return (
-            <div key={u.id} className="grid grid-cols-[1fr_220px_220px_160px] gap-4 border-b border-slate-100 px-4 py-4">
+            <div key={u.id} className="grid grid-cols-[1fr_120px_80px_120px_160px] gap-4 border-b border-slate-100 px-4 py-4">
               <div className="min-w-0">
                 <div className="truncate text-sm font-bold text-slate-900">{u.name}</div>
                 <div className="mt-1 text-xs font-semibold text-slate-500">ID: {u.id}</div>
               </div>
               <div className="min-w-0">
-                <div className="truncate text-sm font-semibold text-slate-800">{u.login ?? "—"}</div>
+                <div className="text-sm font-semibold text-slate-800">{u.ala?.toUpperCase() ?? "ALA1"}</div>
               </div>
               <div className="min-w-0">
-                <div className="truncate text-sm font-semibold text-slate-700">{u.email ?? "—"}</div>
+                <div className="text-sm font-semibold text-slate-800">{u.turma ?? "A"}</div>
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-slate-800">{u.login ?? "—"}</div>
               </div>
               <div className="flex items-center justify-end gap-2">
                 <button

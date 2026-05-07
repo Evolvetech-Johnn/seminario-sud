@@ -47,6 +47,8 @@ export async function GET() {
     name: d.name,
     email: d.email ?? null,
     login: d.login ?? null,
+    ala: d.ala ?? "ala1",
+    turma: d.turma ?? "A",
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
   }));
@@ -75,7 +77,10 @@ export async function POST(req: Request) {
   const name = asString(body?.name, 120);
   const email = asString(body?.email, 180) || null;
   const requestedLogin = asString(body?.login, 80).toLowerCase() || "";
+  const ala = asString(body?.ala, 10).toLowerCase() || "ala1";
+  const turma = asString(body?.turma, 10).toUpperCase() || "A";
   if (name.length < 2) return NextResponse.json({ ok: false, error: "Nome inválido" }, { status: 400 });
+  if (!["ala1", "ala2", "ala3"].includes(ala)) return NextResponse.json({ ok: false, error: "Ala inválida" }, { status: 400 });
 
   const tempPassword = generateTempPassword();
   const { salt, hash } = createPasswordHash(tempPassword);
@@ -98,6 +103,8 @@ export async function POST(req: Request) {
     name,
     email,
     login,
+    ala,
+    turma,
     salt,
     hash,
     createdAt: now,
@@ -121,6 +128,8 @@ export async function POST(req: Request) {
         name: doc.name,
         email: doc.email,
         login: doc.login,
+        ala: doc.ala,
+        turma: doc.turma,
         tempPassword,
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt,
