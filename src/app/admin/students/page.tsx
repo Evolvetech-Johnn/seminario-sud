@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { useStudents, useUpdateStudent } from "@/modules/users/users.api";
 
 export default function AdminStudentsPage() {
+  const [query, setQuery] = useState("");
   const [alaFilter, setAlaFilter] = useState<"ala1" | "ala2" | "ala3" | "all">("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
@@ -15,8 +16,10 @@ export default function AdminStudentsPage() {
   const [createRole, setCreateRole] = useState<"student" | "teacher">("student");
   const [createName, setCreateName] = useState("");
   const [createTeacherEmail, setCreateTeacherEmail] = useState("");
+  const [createStudentLogin, setCreateStudentLogin] = useState("");
   const [createAla, setCreateAla] = useState<"ala1" | "ala2" | "ala3">("ala1");
   const [createTurma, setCreateTurma] = useState("");
+  const [createPending, setCreatePending] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [resetPasswordMsg, setResetPasswordMsg] = useState<string | null>(null);
   const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
@@ -338,10 +341,6 @@ export default function AdminStudentsPage() {
           <div>Ala</div>
           <div>Turma</div>
           <div>Usuário</div>
-          <div>Ações</div>
-        </div>
-          <div>Usuário</div>
-          <div>Email</div>
           <div>Ações</div>
         </div>
 

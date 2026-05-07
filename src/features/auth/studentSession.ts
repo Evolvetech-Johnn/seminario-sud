@@ -28,6 +28,8 @@ export function createStudentSession(
   return {
     id: `${base}-${idSuffix}`,
     name: normalized,
+    ala: "ala1",
+    turma: "A",
     createdAt: new Date().toISOString(),
   };
 }

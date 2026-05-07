@@ -265,8 +265,6 @@ export function LoginClient() {
                               email: student.email ? String(student.email) : null,
                               ala: String(student.ala ?? "ala1"),
                               turma: String(student.turma ?? "A"),
-                              ala: String(student.ala ?? "ala1"),
-                              turma: String(student.turma ?? "A"),
                               createdAt: new Date().toISOString(),
                             });
                             router.replace(nextUrl);
@@ -293,6 +291,8 @@ export function LoginClient() {
                             name: String(student.name),
                             login: student.login ? String(student.login) : undefined,
                             email: student.email ? String(student.email) : null,
+                            ala: String(student.ala ?? "ala1"),
+                            turma: String(student.turma ?? "A"),
                             createdAt: new Date().toISOString(),
                           });
                           router.replace(nextUrl);
