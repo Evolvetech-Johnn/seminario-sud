@@ -31,10 +31,25 @@ export function LoginClient() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const normalizeRedirectUrl = (target: string | null, studentAla: string) => {
+    if (!target) return `/ala/${studentAla}`;
+    const match = /^\/ala\/([^/]+)/.exec(target);
+    if (match && match[1] !== studentAla) return `/ala/${studentAla}`;
+    return target;
+  };
+
+  useEffect(() => {
+    const modeParam = searchParams.get("mode");
+    if (modeParam === "setPassword") {
+      setMode("setPassword");
+      return;
+    }
+    setMode("login");
+  }, [searchParams]);
+
   useEffect(() => {
     if (isHydrated && session) {
-      // Se há um nextUrl específico, usar ele; senão, redirecionar para a ala do aluno
-      const redirectUrl = nextUrl || `/ala/${session.ala}`;
+      const redirectUrl = normalizeRedirectUrl(nextUrl, session.ala);
       router.replace(redirectUrl);
     }
   }, [isHydrated, session, nextUrl, router]);
@@ -260,16 +275,17 @@ export function LoginClient() {
                               setError("Não foi possível entrar");
                               return;
                             }
+                            const studentAla = String(student.ala ?? "ala1");
                             setSession({
                               id: String(student.id),
                               name: String(student.name),
                               login: student.login ? String(student.login) : undefined,
                               email: student.email ? String(student.email) : null,
-                              ala: String(student.ala ?? "ala1"),
+                              ala: studentAla,
                               turma: String(student.turma ?? "A"),
                               createdAt: new Date().toISOString(),
                             });
-                            const redirectUrl = nextUrl || `/ala/${student.ala ?? "ala1"}`;
+                            const redirectUrl = normalizeRedirectUrl(nextUrl, studentAla);
                             router.replace(redirectUrl);
                             return;
                           }
@@ -289,16 +305,17 @@ export function LoginClient() {
                             setError("Não foi possível entrar");
                             return;
                           }
+                          const studentAla = String(student.ala ?? "ala1");
                           setSession({
                             id: String(student.id),
                             name: String(student.name),
                             login: student.login ? String(student.login) : undefined,
                             email: student.email ? String(student.email) : null,
-                            ala: String(student.ala ?? "ala1"),
+                            ala: studentAla,
                             turma: String(student.turma ?? "A"),
                             createdAt: new Date().toISOString(),
                           });
-                          const redirectUrl = nextUrl || `/ala/${student.ala ?? "ala1"}`;
+                          const redirectUrl = normalizeRedirectUrl(nextUrl, studentAla);
                           router.replace(redirectUrl);
                         } catch {
                           setError("Falha de rede. Tente novamente.");

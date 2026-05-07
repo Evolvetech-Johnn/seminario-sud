@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { allLessonMetas } from "@/features/lessons/lessonMetas";
+import { useStudentSession } from "@/hooks/useStudentSession";
+
+const ALA_LINKS = [
+  { label: "Ala 1", href: "/ala/ala1" },
+  { label: "Ala 2", href: "/ala/ala2" },
+  { label: "Ala 3", href: "/ala/ala3" },
+];
 
 type AppHeaderProps = {
   activeHref?: string;
@@ -61,6 +69,12 @@ export function AppHeader({
   onLogout,
   className,
 }: AppHeaderProps) {
+  const pathname = usePathname() ?? "/";
+  const { session, logout: sessionLogout } = useStudentSession();
+  const currentStudentName = studentName ?? session?.name ?? null;
+  const handleLogout = onLogout ?? sessionLogout;
+  const loginHref = `/login?next=${encodeURIComponent(pathname)}`;
+  const forgotHref = "/login?mode=setPassword";
   const [query, setQuery] = useState("");
 
   const lessonItems = useMemo<LessonItem[]>(
@@ -220,22 +234,46 @@ export function AppHeader({
                 </div>
               </div>
             </details>
+
+            {ALA_LINKS.map((ala) => (
+              <Link
+                key={ala.href}
+                href={ala.href}
+                prefetch={false}
+                className="inline-flex items-center rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-white/90 transition hover:bg-white/15 sm:text-sm"
+              >
+                {ala.label}
+              </Link>
+            ))}
           </nav>
 
-          {studentName ? (
+          {currentStudentName ? (
             <div className="hidden items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-white/90 ring-1 ring-white/10 sm:flex">
-              <span className="max-w-40 truncate">{studentName}</span>
-              {onLogout ? (
+              <span className="max-w-40 truncate">{currentStudentName}</span>
+              <Link
+                href={forgotHref}
+                className="rounded-full bg-white/10 px-2 py-1 text-xs font-bold text-white/90 transition hover:bg-white/10"
+              >
+                Esqueci a senha
+              </Link>
+              {handleLogout ? (
                 <button
                   type="button"
-                  onClick={onLogout}
+                  onClick={handleLogout}
                   className="rounded-full px-2 py-1 text-xs font-bold text-white/90 transition hover:bg-white/10"
                 >
                   Sair
                 </button>
               ) : null}
             </div>
-          ) : null}
+          ) : (
+            <Link
+              href={loginHref}
+              className="inline-flex items-center rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-white/90 transition hover:bg-white/15 sm:text-sm"
+            >
+              Login
+            </Link>
+          )}
         </div>
       </div>
     </header>
