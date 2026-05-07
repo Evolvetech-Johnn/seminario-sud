@@ -16,8 +16,8 @@ export function LoginClient() {
 
   const nextUrl = useMemo(() => {
     const raw = searchParams.get("next");
-    if (!raw) return "/aulas/aula-1-010-overview";
-    if (!raw.startsWith("/")) return "/aulas/aula-1-010-overview";
+    if (!raw) return null;
+    if (!raw.startsWith("/")) return null;
     return raw;
   }, [searchParams]);
 
@@ -33,7 +33,9 @@ export function LoginClient() {
 
   useEffect(() => {
     if (isHydrated && session) {
-      router.replace(nextUrl);
+      // Se há um nextUrl específico, usar ele; senão, redirecionar para a ala do aluno
+      const redirectUrl = nextUrl || `/ala/${session.ala}`;
+      router.replace(redirectUrl);
     }
   }, [isHydrated, session, nextUrl, router]);
 
@@ -267,7 +269,8 @@ export function LoginClient() {
                               turma: String(student.turma ?? "A"),
                               createdAt: new Date().toISOString(),
                             });
-                            router.replace(nextUrl);
+                            const redirectUrl = nextUrl || `/ala/${student.ala ?? "ala1"}`;
+                            router.replace(redirectUrl);
                             return;
                           }
 
@@ -295,7 +298,8 @@ export function LoginClient() {
                             turma: String(student.turma ?? "A"),
                             createdAt: new Date().toISOString(),
                           });
-                          router.replace(nextUrl);
+                          const redirectUrl = nextUrl || `/ala/${student.ala ?? "ala1"}`;
+                          router.replace(redirectUrl);
                         } catch {
                           setError("Falha de rede. Tente novamente.");
                         } finally {
