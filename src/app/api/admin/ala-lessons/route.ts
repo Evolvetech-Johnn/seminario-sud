@@ -96,6 +96,7 @@ export async function PUT(req: Request) {
   if (body?.subtitle !== undefined) updates.subtitle = asString(body.subtitle, 500);
   if (body?.content !== undefined) updates.content = body.content;
   if (body?.order !== undefined) updates.order = Number(body.order) || 0;
+  if (body?.isToday !== undefined) updates.isToday = Boolean(body.isToday);
 
   updates.updatedAt = new Date().toISOString();
 

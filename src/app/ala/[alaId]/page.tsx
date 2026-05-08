@@ -14,6 +14,7 @@ type AlaLesson = {
   ala: string;
   order: number;
   isActive: boolean;
+  isToday?: boolean;
 };
 
 type AlaConfig = {
@@ -216,9 +217,16 @@ export default function AlaPage({ params }: { params: { alaId: string } }) {
                     className="group relative overflow-hidden rounded-3xl border border-white/20 bg-white/80 p-6 shadow-xl ring-1 ring-slate-200/50 backdrop-blur transition hover:bg-white hover:shadow-2xl"
                   >
                     <div className="relative z-10">
-                      <h3 className="text-lg font-bold text-slate-900 group-hover:text-sud-blue transition">
-                        {lesson.title}
-                      </h3>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-bold text-slate-900 group-hover:text-sud-blue transition">
+                          {lesson.title}
+                        </h3>
+                        {lesson.isToday && (
+                          <span className="inline-flex items-center rounded-full bg-sud-blue px-2 py-1 text-xs font-semibold text-white">
+                            Aula de Hoje
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-2 text-sm text-slate-600 line-clamp-3">
                         {lesson.description}
                       </p>
