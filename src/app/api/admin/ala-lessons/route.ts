@@ -15,9 +15,6 @@ function asString(value: unknown, maxLen: number) {
 }
 
 export async function GET(req: Request) {
-  const auth = await requireTeacherAuth();
-  if (!auth) return NextResponse.json({ ok: false, error: "Não autorizado" }, { status: 401 });
-
   const db = await getMongoDb();
   if (!db) return NextResponse.json({ ok: false, error: "MongoDB não configurado" }, { status: 500 });
 
@@ -33,7 +30,7 @@ export async function GET(req: Request) {
     .sort({ order: 1 })
     .toArray();
 
-  return NextResponse.json({ ok: true, data: docs });
+  return NextResponse.json({ ok: true, data: docs, lessons: docs });
 }
 
 export async function POST(req: Request) {

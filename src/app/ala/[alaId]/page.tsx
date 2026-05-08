@@ -57,12 +57,7 @@ export default function AlaPage({ params }: { params: { alaId: string } }) {
       return;
     }
 
-    if (!session) {
-      setLoading(false);
-      return;
-    }
-
-    if (session.ala !== params.alaId) {
+    if (session && session.ala !== params.alaId) {
       router.replace(`/ala/${session.ala}`);
       return;
     }
@@ -73,7 +68,7 @@ export default function AlaPage({ params }: { params: { alaId: string } }) {
         const res = await fetch(`/api/admin/ala-lessons?ala=${params.alaId}`);
         if (res.ok) {
           const data = await res.json();
-          setLessons(data.lessons || []);
+          setLessons(data.lessons || data.data || []);
         }
       } catch (error) {
         console.error("Erro ao carregar aulas:", error);
@@ -119,42 +114,6 @@ export default function AlaPage({ params }: { params: { alaId: string } }) {
     );
   }
 
-  if (!session) {
-    return (
-      <div className="min-h-dvh bg-white">
-        <AppHeader />
-        <main className="relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-sud-navy via-white to-white" />
-          <div className="relative mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
-            <div className="mb-8 rounded-3xl border border-white/20 bg-white/80 p-10 shadow-xl ring-1 ring-slate-200/50 backdrop-blur text-center">
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                {alaConfig.name}
-              </h1>
-              <p className="mt-3 text-lg text-slate-700">{alaConfig.description}</p>
-              <p className="mt-3 text-sm text-slate-600">
-                Esta é a página pública da {alaConfig.name}. Somente estudantes desta ala podem entrar e ver o conteúdo completo.
-              </p>
-              <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                <Link
-                  href={`/login?next=/ala/${params.alaId}`}
-                  className="rounded-full bg-sud-blue px-5 py-3 text-sm font-bold text-white transition hover:bg-sud-navy"
-                >
-                  Fazer login na {alaConfig.name}
-                </Link>
-                <Link
-                  href="/login?mode=setPassword"
-                  className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
-                >
-                  Esqueci a senha
-                </Link>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-dvh bg-white">
       <AppHeader />
@@ -166,13 +125,37 @@ export default function AlaPage({ params }: { params: { alaId: string } }) {
             <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
               {alaConfig.name}
             </h1>
-            <p className="mt-2 text-lg text-white/90">
-              {alaConfig.description} • Turma {session.turma}
-            </p>
-            <p className="mt-2 text-sm text-white/80">
-              Bem-vindo(a), {session.name}
-            </p>
+            <p className="mt-2 text-lg text-white/90">{alaConfig.description}</p>
+            {session ? (
+              <p className="mt-2 text-sm text-white/80">Bem-vindo(a), {session.name}</p>
+            ) : (
+              <p className="mt-2 text-sm text-white/80">
+                Você está na página pública da {alaConfig.name}. Faça login para salvar seu progresso.
+              </p>
+            )}
           </div>
+
+          {!session && (
+            <div className="mb-6 rounded-3xl border border-white/20 bg-white/80 p-6 shadow-xl ring-1 ring-slate-200/50 backdrop-blur text-center">
+              <p className="text-sm text-slate-700">
+                A lista de aulas está visível publicamente. Para acessar o conteúdo completo e registrar seu progresso, faça login.
+              </p>
+              <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                <Link
+                  href={`/login?next=/ala/${params.alaId}`}
+                  className="rounded-full bg-sud-blue px-5 py-3 text-sm font-bold text-white transition hover:bg-sud-navy"
+                >
+                  Fazer login
+                </Link>
+                <Link
+                  href="/login?mode=setPassword"
+                  className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                >
+                  Esqueci a senha
+                </Link>
+              </div>
+            </div>
+          )}
 
           <div className="mb-6 flex items-center justify-between">
             <Link
@@ -181,12 +164,14 @@ export default function AlaPage({ params }: { params: { alaId: string } }) {
             >
               ← Voltar às alas
             </Link>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-white/60 backdrop-blur transition hover:bg-white"
-            >
-              Meu progresso →
-            </Link>
+            {session && (
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-white/60 backdrop-blur transition hover:bg-white"
+              >
+                Meu progresso →
+              </Link>
+            )}
           </div>
 
           {loading ? (
