@@ -230,9 +230,11 @@ export default function AlaPage({ params }: { params: { alaId: string } }) {
                       <p className="mt-2 text-sm text-slate-600 line-clamp-3">
                         {lesson.description}
                       </p>
-                      <div className="mt-4 text-xs text-slate-500">
-                        Aula {lesson.order}
-                      </div>
+                      {!lesson.isToday && (
+                        <div className="mt-4 text-xs text-slate-500">
+                          Aula {lesson.order}
+                        </div>
+                      )}
                     </div>
                   </Link>
                 ))}
