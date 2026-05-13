@@ -104,8 +104,7 @@ export function AppHeader({
     });
   }, [lessonItems, query]);
 
-  const todayLessonSlug =
-    lessonItems.find((item) => item.lessonNumber === 70)?.slug ?? pickTodayLessonSlug(lessonItems);
+  const todayLessonSlug = pickTodayLessonSlug(lessonItems);
   const todayHref = todayLessonSlug ? `/aulas/${todayLessonSlug}` : "/";
 
   const groupedItems = useMemo(() => {
