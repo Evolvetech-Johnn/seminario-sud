@@ -317,9 +317,9 @@ export const allLessonMetas: LessonMeta[] = [
     day: "ter",
   },
   {
-    slug: "aula-45-112-genesis-39",
-    title: "Gênesis 39",
-    subtitle: "Como vencer a tentação",
+    slug: "aula-78-193-deuteronomy-15",
+    title: "Deuteronômio 15",
+    subtitle: "“Abrirás de todo a tua mão”",
     date: "2026-05-13",
     day: "qua",
   },
@@ -546,6 +546,13 @@ export const allLessonMetas: LessonMeta[] = [
     subtitle: "Buscar o Salvador com fé",
     date: "2026-05-06",
     day: "ter",
+  },
+  {
+    slug: "aula-45-112-genesis-39",
+    title: "Gênesis 39",
+    subtitle: "Como vencer a tentação",
+    date: "2026-07-09",
+    day: "qui",
   },
 ];
 

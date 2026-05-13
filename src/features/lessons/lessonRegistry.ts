@@ -80,6 +80,7 @@ const lessonLoadersByNumber: Record<number, LessonLoader> = {
   75: async () => (await import("./aula-75/config")).aula75Lesson,
   76: async () => (await import("./aula-76/config")).aula76Lesson,
   77: async () => (await import("./aula-77/config")).aula77Lesson,
+  78: async () => (await import("./aula-78/config")).aula78Lesson,
 };
 
 function parseLessonNumberFromSlug(slug: LessonSlug): number | null {
