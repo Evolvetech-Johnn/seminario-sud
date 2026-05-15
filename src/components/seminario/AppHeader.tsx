@@ -58,9 +58,19 @@ function parseLessonNumberFromSlug(slug: string) {
 function pickTodayLessonSlug(items: LessonItem[]) {
   if (!items.length) return null;
   const todayIso = new Date().toISOString().slice(0, 10);
-  const sorted = [...items].sort((a, b) => (a.isoDate ?? "").localeCompare(b.isoDate ?? ""));
-  const lastOnOrBeforeToday = [...sorted].reverse().find((l) => (l.isoDate ?? "") <= todayIso) ?? null;
-  return (lastOnOrBeforeToday ?? sorted[0])?.slug ?? null;
+  
+  const sortedWithLessonNumber = [...items]
+    .filter((item) => typeof item.lessonNumber === "number")
+    .sort((a, b) => (a.lessonNumber ?? 0) - (b.lessonNumber ?? 0));
+  
+  const sortedByDate = [...items]
+    .filter((item) => item.isoDate)
+    .sort((a, b) => (a.isoDate ?? "").localeCompare(b.isoDate ?? ""));
+  
+  const lastOnOrBeforeToday = [...sortedByDate].reverse().find((l) => l.isoDate && l.isoDate <= todayIso);
+  const fallback = sortedWithLessonNumber[0] || sortedByDate[0] || items[0];
+  
+  return (lastOnOrBeforeToday ?? fallback)?.slug ?? null;
 }
 
 export function AppHeader({
