@@ -1,6 +1,4 @@
 
-import type { LessonItem } from "@/components/seminario/LessonCalendar";
-
 export type LessonMeta = {
   slug: string;
   title: string;
